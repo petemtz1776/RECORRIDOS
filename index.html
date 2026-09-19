@@ -677,27 +677,73 @@ function screenGravity(){
    ANGULO PENDULO
 ========================================================= */
 
-function calcularAnguloPendulo(){
+function calcularAnguloPendulo() {
 
-    const g=screenGravity();
+    const g = screenGravity();
 
-    if(
-        !Number.isFinite(g.x)||
+    if (
+        !Number.isFinite(g.x) ||
         !Number.isFinite(g.y)
-    )return 0;
+    ) {
+        return 0;
+    }
 
-    const magnitude=Math.hypot(g.x,g.y);
+    const magnitude = Math.hypot(g.x, g.y);
 
-    if(magnitude<.1)return 0;
+    if (magnitude < 0.1) {
+        return 0;
+    }
 
-    let ang=
-        Math.atan2(g.x,-g.y)*
-        180/Math.PI;
+    /*
+     * CORRECCIÓN:
+     *
+     * En posición vertical del teléfono:
+     *
+     *   y positivo = gravedad hacia abajo
+     *   x positivo = derecha
+     *
+     * Por eso 0° debe calcularse usando +g.y,
+     * no -g.y.
+     */
 
-    while(ang>180)ang-=360;
-    while(ang<-180)ang+=360;
+    let ang =
+        Math.atan2(
+            g.x,
+            g.y
+        ) *
+        180 /
+        Math.PI;
 
-    return clamp(ang,-90,90);
+    /*
+     * Normalizar a -180 / +180
+     */
+
+    while (ang > 180) {
+        ang -= 360;
+    }
+
+    while (ang < -180) {
+        ang += 360;
+    }
+
+    /*
+     * Para plomado solamente usamos
+     * -90° a +90°.
+     */
+
+    if (ang > 90) {
+        ang -= 180;
+    }
+
+    if (ang < -90) {
+        ang += 180;
+    }
+
+    return clamp(
+        ang,
+        -90,
+        90
+    );
 }
 
 /* =========================================================
