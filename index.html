@@ -248,17 +248,17 @@ button:disabled{opacity:.45}
 
 <div id="specialPanel">
 
-```
 <label for="knownMeasure">
     MEDIDA REAL DEL OBJETO DE REFERENCIA
 </label>
 
 <input
-    id="knownMeasure"
-    type="number"
-    step="0.001"
-    min="0.001"
-    placeholder="Ejemplo: 2.00 metros"
+id="knownMeasure"
+type="number"
+step="0.001"
+min="0.001"
+placeholder="Ejemplo: 2.00 metros"
+
 >
 
 <div id="specialHelp">
@@ -268,7 +268,6 @@ button:disabled{opacity:.45}
 <button id="measureStart">
     CONTINUAR
 </button>
-```
 
 </div>
 
@@ -276,7 +275,6 @@ button:disabled{opacity:.45}
 
 <div id="controls">
 
-```
 <button id="signalButton">🎯 SEÑALAR</button>
 
 <button id="takeButton" disabled>📸 FOTO</button>
@@ -286,7 +284,6 @@ button:disabled{opacity:.45}
 <button id="cancelSignalButton">❌ CANCELAR</button>
 
 <button id="cancelButton">✕ SALIR</button>
-```
 
 </div>
 
@@ -382,6 +379,16 @@ let orientationHandler=null;
 
 let gravity={x:0,y:-1,z:0};
 let gravityReady=false;
+
+/*
+ * NUEVO:
+ * Guardamos los valores reales de DeviceOrientation.
+ * Esto se usa solamente para calcular el plomado.
+ */
+let orientationData={
+    beta:null,
+    gamma:null
+};
 
 let plomadoGrados=0;
 let plomadoActivo=false;
@@ -596,6 +603,13 @@ async function iniciarSensores(){
                 };
 
                 gravityReady=true;
+
+                /*
+                 * Se mantiene el sensor de gravedad.
+                 * Ya no se usa como única fuente para
+                 * determinar el ángulo del plomado.
+                 */
+
                 actualizarPlomado();
             }
         };
@@ -617,7 +631,19 @@ async function iniciarSensores(){
                 throw new Error('Permiso de orientación no concedido');
         }
 
-        orientationHandler=()=>{
+        orientationHandler=e=>{
+
+            /*
+             * Guardamos beta/gamma directamente.
+             * gamma = inclinación izquierda/derecha.
+             * beta  = inclinación adelante/atrás.
+             */
+            if(Number.isFinite(e.beta))
+                orientationData.beta=e.beta;
+
+            if(Number.isFinite(e.gamma))
+                orientationData.gamma=e.gamma;
+
             actualizarPlomado();
         };
 
@@ -675,69 +701,146 @@ function screenGravity(){
 
 /* =========================================================
    ANGULO PENDULO
-========================================================= */
+   ========================================================= */
 
-function calcularAnguloPendulo() {
+/*
+ * CORRECCIÓN DEL PLOMADO
+ *
+ * El problema estaba en usar directamente x/y de
+ * accelerationIncludingGravity para decidir la inclinación
+ * visual. En vertical algunos teléfonos entregan esos ejes
+ * de forma que el cálculo termina llevando el péndulo a
+ * izquierda/derecha.
+ *
+ * Ahora:
+ *
+ * VERTICAL:
+ *   usamos gamma, que representa la inclinación izquierda/
+ *   derecha del teléfono.
+ *
+ * HORIZONTAL:
+ *   usamos beta, adaptándolo al giro de pantalla.
+ *
+ * Si DeviceOrientation no entrega datos todavía,
+ * hacemos fallback al sensor de gravedad anterior.
+ */
 
-    const g = screenGravity();
+function calcularAnguloPendulo(){
 
-    if (
-        !Number.isFinite(g.x) ||
-        !Number.isFinite(g.y)
-    ) {
-        return 0;
-    }
+    const orientacion=(
+        screen.orientation &&
+        Number.isFinite(screen.orientation.angle)
+    )
+        ? screen.orientation.angle
+        : (
+            window.innerWidth>window.innerHeight
+                ? 90
+                : 0
+        );
 
-    const magnitude = Math.hypot(g.x, g.y);
+    const gamma=orientationData.gamma;
+    const beta=orientationData.beta;
 
-    if (magnitude < 0.1) {
-        return 0;
+    /*
+     * ============================
+     * VERTICAL
+     * ============================
+     *
+     * En vertical queremos que:
+     *
+     * teléfono derecho -> 0°
+     * inclinado derecha -> positivo
+     * inclinado izquierda -> negativo
+     *
+     * gamma representa izquierda/derecha.
+     */
+    if(
+        (orientacion===0||orientacion===180) &&
+        Number.isFinite(gamma)
+    ){
+
+        let ang=gamma;
+
+        /*
+         * Si el teléfono está invertido verticalmente,
+         * conservamos la dirección visual correcta.
+         */
+        if(orientacion===180)
+            ang=-ang;
+
+        return clamp(
+            ang,
+            -90,
+            90
+        );
     }
 
     /*
-     * CORRECCIÓN:
-     *
-     * En posición vertical del teléfono:
-     *
-     *   y positivo = gravedad hacia abajo
-     *   x positivo = derecha
-     *
-     * Por eso 0° debe calcularse usando +g.y,
-     * no -g.y.
+     * ============================
+     * HORIZONTAL
+     * ============================
      */
 
-    let ang =
+    if(
+        (orientacion===90||orientacion===270) &&
+        Number.isFinite(beta)
+    ){
+
+        let ang=beta;
+
+        /*
+         * Ajustamos el eje según el lado del teléfono
+         * utilizado para landscape.
+         */
+        if(orientacion===90)
+            ang=-ang;
+
+        return clamp(
+            ang,
+            -90,
+            90
+        );
+    }
+
+    /*
+     * ============================
+     * FALLBACK GRAVEDAD
+     * ============================
+     */
+
+    const g=screenGravity();
+
+    if(
+        !Number.isFinite(g.x)||
+        !Number.isFinite(g.y)
+    ){
+        return 0;
+    }
+
+    const magnitude=Math.hypot(g.x,g.y);
+
+    if(magnitude<0.1)
+        return 0;
+
+    let ang=
         Math.atan2(
             g.x,
             g.y
-        ) *
-        180 /
+        )*
+        180/
         Math.PI;
 
-    /*
-     * Normalizar a -180 / +180
-     */
+    while(ang>180)
+        ang-=360;
 
-    while (ang > 180) {
-        ang -= 360;
-    }
+    while(ang<-180)
+        ang+=360;
 
-    while (ang < -180) {
-        ang += 360;
-    }
+    if(ang>90)
+        ang-=180;
 
-    /*
-     * Para plomado solamente usamos
-     * -90° a +90°.
-     */
-
-    if (ang > 90) {
-        ang -= 180;
-    }
-
-    if (ang < -90) {
-        ang += 180;
-    }
+    if(ang<-90)
+        ang+=180;
 
     return clamp(
         ang,
@@ -748,7 +851,7 @@ function calcularAnguloPendulo() {
 
 /* =========================================================
    TRANSPORTADOR DEL PLOMADO
-   ========================================================= */
+========================================================= */
 
 function dibujarTransportador(){
 
@@ -793,6 +896,7 @@ function dibujarTransportador(){
     c.save();
 
     /* arco */
+
     c.beginPath();
 
     for(let i=0;i<=180;i++){
@@ -817,6 +921,7 @@ function dibujarTransportador(){
     c.stroke();
 
     /* marcas */
+
     for(let deg=-90;deg<=90;deg++){
 
         const rad=deg*Math.PI/180;
@@ -862,6 +967,7 @@ function dibujarTransportador(){
     }
 
     /* numeros */
+
     c.textAlign='center';
     c.textBaseline='middle';
     c.font='bold 13px Arial';
@@ -888,6 +994,7 @@ function dibujarTransportador(){
     }
 
     /* punto de giro */
+
     c.beginPath();
     c.arc(cx,cy,9,0,Math.PI*2);
     c.fillStyle='#ff3b30';
@@ -898,6 +1005,7 @@ function dibujarTransportador(){
     c.stroke();
 
     /* pendulo */
+
     const ang=plomadoGrados*Math.PI/180;
 
     const longitud=Math.min(
@@ -914,6 +1022,7 @@ function dibujarTransportador(){
         longitud*Math.cos(ang);
 
     /* contorno */
+
     c.beginPath();
     c.moveTo(cx,cy);
     c.lineTo(px,py);
@@ -923,6 +1032,7 @@ function dibujarTransportador(){
     c.stroke();
 
     /* rojo */
+
     c.beginPath();
     c.moveTo(cx,cy);
     c.lineTo(px,py);
@@ -931,6 +1041,7 @@ function dibujarTransportador(){
     c.stroke();
 
     /* peso */
+
     c.beginPath();
     c.arc(px,py,11,0,Math.PI*2);
     c.fillStyle='#ff3030';
@@ -943,6 +1054,7 @@ function dibujarTransportador(){
     /*
        REFERENCIA VERTICAL
     */
+
     c.beginPath();
     c.moveTo(cx,cy);
     c.lineTo(
@@ -979,7 +1091,9 @@ function actualizarPlomado(){
     plomadoGrados=calcularAnguloPendulo();
 
     sensorHud.textContent=
-        gravityReady
+        gravityReady||
+        Number.isFinite(orientationData.gamma)||
+        Number.isFinite(orientationData.beta)
             ? `Sensores: ACTIVOS | péndulo ${plomadoGrados.toFixed(2)}°`
             : 'Sensores: esperando…';
 
@@ -1201,11 +1315,6 @@ async function tomarFoto(){
 
             const ctx=capturaBase();
 
-            /*
-               Primero guardamos la fotografía limpia
-               con su estampado normal.
-            */
-
             dibujarEstampado(
                 ctx,
                 canvas.width,
@@ -1414,11 +1523,6 @@ function manejarClickMedicion(e){
 
     const p=puntoMedicion(e);
 
-    /*
-       El orden es:
-       R1 -> R2 -> BASE -> PUNTA
-    */
-
     if(measureStep==='r1'){
 
         measurePoints.r1=p;
@@ -1519,8 +1623,6 @@ function dibujarEditorMedicion(){
 
         const p=measurePoints;
 
-        /* referencia */
-
         if(p.r1&&p.r2){
 
             c.beginPath();
@@ -1534,8 +1636,6 @@ function dibujarEditorMedicion(){
             );
             c.stroke();
         }
-
-        /* linea del poste */
 
         if(p.base&&p.punta){
 
@@ -1551,37 +1651,10 @@ function dibujarEditorMedicion(){
             c.stroke();
         }
 
-        dibujarPuntoCanvas(
-            c,
-            p.r1,
-            '#ff9800',
-            'R1'
-        );
-
-        dibujarPuntoCanvas(
-            c,
-            p.r2,
-            '#9c27b0',
-            'R2'
-        );
-
-        dibujarPuntoCanvas(
-            c,
-            p.base,
-            '#00aaff',
-            'BASE'
-        );
-
-        dibujarPuntoCanvas(
-            c,
-            p.punta,
-            '#00c853',
-            'PUNTA'
-        );
-
-        /*
-           Línea de altura
-        */
+        dibujarPuntoCanvas(c,p.r1,'#ff9800','R1');
+        dibujarPuntoCanvas(c,p.r2,'#9c27b0','R2');
+        dibujarPuntoCanvas(c,p.base,'#00aaff','BASE');
+        dibujarPuntoCanvas(c,p.punta,'#00c853','PUNTA');
 
         if(p.base&&p.punta){
 
@@ -1683,12 +1756,6 @@ function calcularMedicion(){
         postePx<=0
     )return null;
 
-    /*
-       Escala:
-       metros por pixel =
-       medida real / pixels de referencia
-    */
-
     const metrosPorPixel=
         referenceReal/referenciaPx;
 
@@ -1751,11 +1818,6 @@ function finalizarMedicion(){
         return;
     }
 
-    /*
-       Se vuelve a dibujar sobre una nueva imagen
-       para generar la fotografía final.
-    */
-
     const finalCanvas=document.createElement('canvas');
 
     finalCanvas.width=canvas.width;
@@ -1775,22 +1837,15 @@ function finalizarMedicion(){
             finalCanvas.height
         );
 
-        /*
-           Referencia R1-R2
-        */
-
         ctx.beginPath();
-
         ctx.moveTo(
             measurePoints.r1.x,
             measurePoints.r1.y
         );
-
         ctx.lineTo(
             measurePoints.r2.x,
             measurePoints.r2.y
         );
-
         ctx.strokeStyle='#ff9800';
         ctx.lineWidth=Math.max(
             4,
@@ -1798,32 +1853,21 @@ function finalizarMedicion(){
         );
         ctx.stroke();
 
-        /*
-           Línea del poste
-        */
-
         ctx.beginPath();
-
         ctx.moveTo(
             measurePoints.base.x,
             measurePoints.base.y
         );
-
         ctx.lineTo(
             measurePoints.punta.x,
             measurePoints.punta.y
         );
-
         ctx.strokeStyle='#00e5ff';
         ctx.lineWidth=Math.max(
             4,
             finalCanvas.width/500
         );
         ctx.stroke();
-
-        /*
-           Puntos
-        */
 
         dibujarPuntoCanvasFinal(
             ctx,
@@ -1856,11 +1900,6 @@ function finalizarMedicion(){
             'PUNTA',
             finalCanvas.width
         );
-
-        /*
-           Estampado de medición.
-           Se hace UNA SOLA VEZ.
-        */
 
         dibujarEstampado(
             ctx,
@@ -2016,10 +2055,6 @@ function confirmarPlomado(){
 
     const ctx=capturaBase();
 
-    /*
-       SOLO UN ESTAMPADO.
-    */
-
     dibujarEstampado(
         ctx,
         canvas.width,
@@ -2115,8 +2150,8 @@ function enviarFotoFinal(dataURL,extra={}){
     const cerrarTrasAck=e=>{
 
         if(
-            !e||
-            !e.data||
+            !e||!
+            e.data||
             e.data.type!=='CAMERA_STAMP_ACK'
         )return;
 
