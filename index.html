@@ -3853,62 +3853,55 @@ if(screen.orientation){
 ========================================================= */
 
 
-window.addEventListener(
-    'load',
-    async()=>{
+window.addEventListener('load', async () => {
 
-        modeBadge.textContent=
-            modo==='medir'
-                ? '📏 MEDIR POSTE'
-                : modo==='plomado'
-                    ? '📐 PLOMADO POSTE'
-                    : '📷 '+nombreTipo(tipo);
+    console.log('CAMERA STAMP: LOAD EJECUTADO');
+    console.log('tipo =', tipo);
+    console.log('modo =', modo);
+    console.log('video =', video);
+    console.log('takeButton =', takeButton);
 
-        if(modo==='medir'){
+    modeBadge.textContent =
+        modo === 'medir'
+            ? '📏 MEDIR POSTE'
+            : modo === 'plomado'
+                ? '📐 PLOMADO POSTE'
+                : '📷 ' + nombreTipo(tipo);
 
-            specialPanel.style.display='block';
+    if(modo === 'medir'){
 
-            specialHelp.textContent=
-                'Captura la medida real del objeto conocido. Después pulsa CONTINUAR, toma la foto y marca R1, R2, BASE y PUNTA.';
+        specialPanel.style.display='block';
 
-            setStatus(
-                'Abriendo cámara…'
-            );
+        setStatus('Abriendo cámara…');
 
-            await iniciarCamara();
+        await iniciarCamara();
 
-            return;
-        }
-
-        if(modo==='plomado'){
-
-            plomadoOverlay.style.display='block';
-            plomadoActivo=true;
-
-            setStatus(
-                'Abriendo cámara…'
-            );
-
-            await iniciarCamara();
-
-            dibujarTransportador();
-
-            return;
-        }
-
-        /*
-           FOTO NORMAL:
-           NO abrir cámara al cargar.
-        */
-
-        specialPanel.style.display='none';
-
-        setStatus(
-            '📷 Listo. Pulsa FOTO para abrir la cámara.'
-        );
+        return;
     }
-);
 
+    if(modo === 'plomado'){
+
+        plomadoOverlay.style.display='block';
+        plomadoActivo=true;
+
+        setStatus('Abriendo cámara…');
+
+        await iniciarCamara();
+
+        dibujarTransportador();
+
+        return;
+    }
+
+    // MODO NORMAL
+    specialPanel.style.display='none';
+
+    setStatus(
+        '📷 Listo. Pulsa FOTO para abrir la cámara.'
+    );
+
+    console.log('CAMERA STAMP: MODO NORMAL LISTO');
+});
 
 
 </script>
