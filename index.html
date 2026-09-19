@@ -1,422 +1,415 @@
+```html
 <!DOCTYPE html>
-
 <html lang="es">
 
 <head>
     <meta charset="UTF-8">
 
-```
-<meta
-    name="viewport"
-    content="width=device-width,initial-scale=1,viewport-fit=cover"
->
+    <meta
+        name="viewport"
+        content="width=device-width,initial-scale=1,viewport-fit=cover"
+    >
 
-<title>PETES CAMERA STAMP</title>
+    <title>PETES CAMERA STAMP</title>
 
-<style>
-    * {
-        box-sizing: border-box;
-    }
-
-    html,
-    body {
-        margin: 0;
-        width: 100%;
-        height: 100%;
-        background: #000;
-        color: #fff;
-        font-family: Arial, sans-serif;
-        overflow: hidden;
-    }
-
-    #cameraContainer {
-        position: relative;
-        width: 100%;
-        height: 100dvh;
-        max-width: 900px;
-        margin: auto;
-        background: #000;
-        overflow: hidden;
-    }
-
-    #video {
-        position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        background: #000;
-    }
-
-    #canvas,
-    #workCanvas {
-        display: none;
-    }
-
-    /* =========================================================
-       HUD
-    ========================================================= */
-
-    #hud {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        z-index: 20;
-        padding: 8px;
-        pointer-events: none;
-    }
-
-    #modeBadge {
-        display: inline-block;
-        background: rgba(0, 0, 0, .72);
-        padding: 8px 10px;
-        border-radius: 8px;
-        font-weight: bold;
-        font-size: 13px;
-    }
-
-    #sensorHud {
-        margin-top: 6px;
-        display: inline-block;
-        background: rgba(0, 0, 0, .62);
-        padding: 7px 10px;
-        border-radius: 8px;
-        font-size: 12px;
-    }
-
-    /* =========================================================
-       PLOMADO
-    ========================================================= */
-
-    #plomadoOverlay {
-        position: absolute;
-        z-index: 18;
-        inset: 0;
-        pointer-events: none;
-        display: none;
-    }
-
-    #plomadoCanvas {
-        position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        display: block;
-    }
-
-    #plomadoReading {
-        position: absolute;
-        z-index: 19;
-        top: 31%;
-        left: 50%;
-        transform: translateX(-50%);
-        background: rgba(0, 0, 0, .72);
-        border: 2px solid rgba(255, 255, 255, .75);
-        border-radius: 12px;
-        padding: 8px 15px;
-        font-size: 22px;
-        font-weight: bold;
-        white-space: nowrap;
-        text-align: center;
-    }
-
-    #plomadoHelp {
-        position: absolute;
-        z-index: 19;
-        top: 38%;
-        left: 50%;
-        transform: translateX(-50%);
-        background: rgba(0, 0, 0, .58);
-        border-radius: 8px;
-        padding: 6px 10px;
-        font-size: 12px;
-        white-space: nowrap;
-    }
-
-    /* =========================================================
-       CONTROLES
-    ========================================================= */
-
-    #controls {
-        position: absolute;
-        z-index: 30;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        padding: 9px 7px calc(9px + env(safe-area-inset-bottom));
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 6px;
-        background: linear-gradient(
-            transparent,
-            rgba(0, 0, 0, .96)
-        );
-    }
-
-    button,
-    input {
-        font: inherit;
-    }
-
-    button {
-        border: 0;
-        border-radius: 8px;
-        padding: 11px 13px;
-        min-height: 46px;
-        font-weight: bold;
-        cursor: pointer;
-    }
-
-    button:disabled {
-        opacity: .45;
-    }
-
-    #takeButton {
-        background: #4caf50;
-        color: #fff;
-    }
-
-    #signalButton {
-        background: #ff9800;
-        color: #fff;
-    }
-
-    #confirmButton {
-        background: #4caf50;
-        color: #fff;
-        display: none;
-    }
-
-    #cancelSignalButton {
-        background: #f44336;
-        color: #fff;
-        display: none;
-    }
-
-    #cancelButton {
-        background: #b71c1c;
-        color: #fff;
-    }
-
-    /* =========================================================
-       PANEL MEDICIÓN
-    ========================================================= */
-
-    #specialPanel {
-        position: absolute;
-        z-index: 40;
-        left: 8px;
-        right: 8px;
-        top: 76px;
-        background: rgba(0, 0, 0, .82);
-        padding: 12px;
-        border-radius: 10px;
-        display: none;
-        pointer-events: auto;
-    }
-
-    #specialPanel label {
-        display: block;
-        font-size: 13px;
-        font-weight: bold;
-        margin-bottom: 5px;
-    }
-
-    #knownMeasure {
-        width: 100%;
-        padding: 10px;
-        border-radius: 7px;
-        border: 1px solid #777;
-        background: #fff;
-        color: #000;
-        font-size: 17px;
-        margin-bottom: 7px;
-    }
-
-    #specialHelp {
-        font-size: 13px;
-        line-height: 1.35;
-    }
-
-    #measureStart {
-        margin-top: 8px;
-        background: #1565c0;
-        color: #fff;
-        width: 100%;
-    }
-
-    /* =========================================================
-       EDITOR DE FLECHA
-    ========================================================= */
-
-    #arrowEditor {
-        position: absolute;
-        inset: 0;
-        z-index: 25;
-        background: #000;
-        touch-action: none;
-        overflow: hidden;
-        overscroll-behavior: none;
-        user-select: none;
-        -webkit-user-select: none;
-        -webkit-touch-callout: none;
-    }
-
-    /* =========================================================
-       STATUS
-    ========================================================= */
-
-    #status {
-        position: absolute;
-        z-index: 60;
-        left: 8px;
-        right: 8px;
-        bottom: 88px;
-        background: rgba(0, 0, 0, .7);
-        padding: 8px;
-        border-radius: 8px;
-        font-size: 12px;
-        white-space: pre-line;
-        pointer-events: none;
-    }
-
-    #preview {
-        display: none;
-        max-width: 100%;
-        max-height: 100%;
-        margin: auto;
-    }
-
-    @media (max-width: 420px) {
-
-        button {
-            padding: 10px 9px;
-            font-size: 12px;
-            min-height: 45px;
+    <style>
+        * {
+            box-sizing: border-box;
         }
 
-        #specialPanel {
-            top: 68px;
+        html,
+        body {
+            margin: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        #cameraContainer {
+            position: relative;
+            width: 100%;
+            height: 100dvh;
+            max-width: 900px;
+            margin: auto;
+            background: #000;
+            overflow: hidden;
+        }
+
+        #video {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            background: #000;
+        }
+
+        #canvas,
+        #workCanvas {
+            display: none;
+        }
+
+        /* =========================================================
+           HUD
+           ========================================================= */
+
+        #hud {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 20;
+            padding: 8px;
+            pointer-events: none;
+        }
+
+        #modeBadge {
+            display: inline-block;
+            background: rgba(0, 0, 0, .72);
+            padding: 8px 10px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 13px;
+        }
+
+        #sensorHud {
+            margin-top: 6px;
+            display: inline-block;
+            background: rgba(0, 0, 0, .62);
+            padding: 7px 10px;
+            border-radius: 8px;
+            font-size: 12px;
+        }
+
+        /* =========================================================
+           PLOMADO
+           ========================================================= */
+
+        #plomadoOverlay {
+            position: absolute;
+            z-index: 18;
+            inset: 0;
+            pointer-events: none;
+            display: none;
+        }
+
+        #plomadoCanvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
         }
 
         #plomadoReading {
-            font-size: 19px;
+            position: absolute;
+            z-index: 19;
+            top: 47%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, .72);
+            border: 2px solid rgba(255, 255, 255, .75);
+            border-radius: 12px;
+            padding: 8px 15px;
+            font-size: 22px;
+            font-weight: bold;
+            white-space: nowrap;
+            text-align: center;
         }
-    }
-</style>
-```
 
+        #plomadoHelp {
+            position: absolute;
+            z-index: 19;
+            top: calc(47% + 55px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, .58);
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        /* =========================================================
+           CONTROLES
+           ========================================================= */
+
+        #controls {
+            position: absolute;
+            z-index: 30;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            padding: 9px 7px calc(9px + env(safe-area-inset-bottom));
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 6px;
+            background: linear-gradient(
+                transparent,
+                rgba(0, 0, 0, .96)
+            );
+        }
+
+        button,
+        input {
+            font: inherit;
+        }
+
+        button {
+            border: 0;
+            border-radius: 8px;
+            padding: 11px 13px;
+            min-height: 46px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:disabled {
+            opacity: .45;
+        }
+
+        #takeButton {
+            background: #4caf50;
+            color: #fff;
+        }
+
+        #signalButton {
+            background: #ff9800;
+            color: #fff;
+        }
+
+        #confirmButton {
+            background: #4caf50;
+            color: #fff;
+            display: none;
+        }
+
+        #cancelSignalButton {
+            background: #f44336;
+            color: #fff;
+            display: none;
+        }
+
+        #cancelButton {
+            background: #b71c1c;
+            color: #fff;
+        }
+
+        /* =========================================================
+           PANEL MEDICIÓN
+           ========================================================= */
+
+        #specialPanel {
+            position: absolute;
+            z-index: 40;
+            left: 8px;
+            right: 8px;
+            top: 76px;
+            background: rgba(0, 0, 0, .82);
+            padding: 12px;
+            border-radius: 10px;
+            display: none;
+            pointer-events: auto;
+        }
+
+        #specialPanel label {
+            display: block;
+            font-size: 13px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        #knownMeasure {
+            width: 100%;
+            padding: 10px;
+            border-radius: 7px;
+            border: 1px solid #777;
+            background: #fff;
+            color: #000;
+            font-size: 17px;
+            margin-bottom: 7px;
+        }
+
+        #specialHelp {
+            font-size: 13px;
+            line-height: 1.35;
+        }
+
+        #measureStart {
+            margin-top: 8px;
+            background: #1565c0;
+            color: #fff;
+            width: 100%;
+        }
+
+        /* =========================================================
+           EDITOR FLECHA
+           ========================================================= */
+
+        #arrowEditor {
+            position: absolute;
+            inset: 0;
+            z-index: 25;
+            background: #000;
+            touch-action: none;
+            overflow: hidden;
+            overscroll-behavior: none;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+
+        /* =========================================================
+           STATUS
+           ========================================================= */
+
+        #status {
+            position: absolute;
+            z-index: 60;
+            left: 8px;
+            right: 8px;
+            bottom: 88px;
+            background: rgba(0, 0, 0, .7);
+            padding: 8px;
+            border-radius: 8px;
+            font-size: 12px;
+            white-space: pre-line;
+            pointer-events: none;
+        }
+
+        #preview {
+            display: none;
+            max-width: 100%;
+            max-height: 100%;
+            margin: auto;
+        }
+
+        @media (max-width: 420px) {
+
+            button {
+                padding: 10px 9px;
+                font-size: 12px;
+                min-height: 45px;
+            }
+
+            #specialPanel {
+                top: 68px;
+            }
+
+            #plomadoReading {
+                font-size: 19px;
+            }
+        }
+    </style>
 </head>
 
 <body>
 
 <div id="cameraContainer">
 
-```
-<video
-    id="video"
-    autoplay
-    playsinline
-    muted
-></video>
+    <video
+        id="video"
+        autoplay
+        playsinline
+        muted
+    ></video>
 
-<canvas id="canvas"></canvas>
-<canvas id="workCanvas"></canvas>
+    <canvas id="canvas"></canvas>
+    <canvas id="workCanvas"></canvas>
 
-<!-- HUD -->
+    <div id="hud">
 
-<div id="hud">
+        <div id="modeBadge">
+            📷 CÁMARA
+        </div>
 
-    <div id="modeBadge">
-        📷 CÁMARA
+        <br>
+
+        <div id="sensorHud">
+            Sensores: esperando…
+        </div>
+
     </div>
 
-    <br>
+    <!-- =========================================================
+         PLOMADO
+         ========================================================= -->
 
-    <div id="sensorHud">
-        Sensores: esperando…
+    <div id="plomadoOverlay">
+
+        <canvas id="plomadoCanvas"></canvas>
+
+        <div id="plomadoReading">
+            PLOMADO: 0.00°
+        </div>
+
+        <div id="plomadoHelp">
+            Alinea el poste con el péndulo
+        </div>
+
     </div>
 
-</div>
+    <!-- =========================================================
+         PANEL MEDICIÓN
+         ========================================================= -->
 
-<!-- =========================================================
-     PLOMADO
-     ========================================================= -->
+    <div id="specialPanel">
 
-<div id="plomadoOverlay">
+        <label for="knownMeasure">
+            MEDIDA REAL DEL OBJETO DE REFERENCIA
+        </label>
 
-    <canvas id="plomadoCanvas"></canvas>
+        <input
+            id="knownMeasure"
+            type="number"
+            step="0.001"
+            min="0.001"
+            placeholder="Ejemplo: 2.00 metros"
+        >
 
-    <div id="plomadoReading">
-        PLOMADO: 0.00°
+        <div id="specialHelp"></div>
+
+        <button id="measureStart">
+            CONTINUAR
+        </button>
+
     </div>
 
-    <div id="plomadoHelp">
-        Alinea el poste con el péndulo
+    <div id="status">
+        Abriendo cámara…
     </div>
 
-</div>
+    <!-- =========================================================
+         CONTROLES
+         ========================================================= -->
 
-<!-- =========================================================
-     PANEL MEDICIÓN
-     ========================================================= -->
+    <div id="controls">
 
-<div id="specialPanel">
+        <button id="signalButton">
+            🎯 SEÑALAR
+        </button>
 
-    <label for="knownMeasure">
-        MEDIDA REAL DEL OBJETO DE REFERENCIA
-    </label>
+        <button id="takeButton" disabled>
+            📸 FOTO
+        </button>
 
-    <input
-        id="knownMeasure"
-        type="number"
-        step="0.001"
-        min="0.001"
-        placeholder="Ejemplo: 2.00 metros"
-    >
+        <button id="confirmButton">
+            ✅ USAR
+        </button>
 
-    <div id="specialHelp"></div>
+        <button id="cancelSignalButton">
+            ❌ CANCELAR
+        </button>
 
-    <button id="measureStart">
-        CONTINUAR
-    </button>
+        <button id="cancelButton">
+            ✕ SALIR
+        </button>
 
-</div>
-
-<div id="status">
-    Abriendo cámara…
-</div>
-
-<!-- =========================================================
-     CONTROLES
-     ========================================================= -->
-
-<div id="controls">
-
-    <button id="signalButton">
-        🎯 SEÑALAR
-    </button>
-
-    <button id="takeButton" disabled>
-        📸 FOTO
-    </button>
-
-    <button id="confirmButton">
-        ✅ USAR
-    </button>
-
-    <button id="cancelSignalButton">
-        ❌ CANCELAR
-    </button>
-
-    <button id="cancelButton">
-        ✕ SALIR
-    </button>
-
-</div>
-```
+    </div>
 
 </div>
 
@@ -548,21 +541,16 @@ const plomadoHelp =
    ========================================================= */
 
 let cameraStream = null;
-
 let gpsActual = null;
-
 let fechaFoto = null;
 
 let logoImagen = null;
-
 let logoListo = false;
 
 let zonaLogo = null;
-
 let zonaEstampado = null;
 
 let modoSenalar = false;
-
 let fotoBase = null;
 
 /* Flecha */
@@ -583,36 +571,20 @@ let orientationHandler = null;
 
 let gravity = {
     x: 0,
-    y: 9.8,
+    y: -1,
     z: 0
 };
 
 let gravityReady = false;
 
-/*
- * Últimos datos de orientación.
- *
- * Se utilizan como respaldo especialmente
- * cuando el teléfono no proporciona correctamente
- * screen.orientation.angle.
- */
-
-let orientationData = {
-    alpha: null,
-    beta: null,
-    gamma: null
-};
-
 /* Plomado */
 
 let plomadoGrados = 0;
-
 let plomadoActivo = false;
 
 /* Medición */
 
 let referenceReal = null;
-
 let specialResult = null;
 
 /* =========================================================
@@ -908,10 +880,6 @@ async function iniciarSensores() {
 
     try {
 
-        /*
-         * iOS solicita permisos al usuario.
-         */
-
         if (
             typeof DeviceMotionEvent !==
             'undefined' &&
@@ -944,9 +912,9 @@ async function iniciarSensores() {
             ) {
 
                 gravity = {
-                    x: Number(a.x),
-                    y: Number(a.y),
-                    z: Number(a.z || 0)
+                    x: a.x,
+                    y: a.y,
+                    z: a.z || 0
                 };
 
                 gravityReady = true;
@@ -962,10 +930,6 @@ async function iniciarSensores() {
                 passive: true
             }
         );
-
-        /*
-         * Solicitud de orientación.
-         */
 
         if (
             typeof DeviceOrientationEvent !==
@@ -986,21 +950,7 @@ async function iniciarSensores() {
             }
         }
 
-        orientationHandler = e => {
-
-            orientationData = {
-                alpha: Number.isFinite(e.alpha)
-                    ? e.alpha
-                    : null,
-
-                beta: Number.isFinite(e.beta)
-                    ? e.beta
-                    : null,
-
-                gamma: Number.isFinite(e.gamma)
-                    ? e.gamma
-                    : null
-            };
+        orientationHandler = () => {
 
             actualizarPlomado();
         };
@@ -1026,115 +976,63 @@ async function iniciarSensores() {
 }
 
 /* =========================================================
-   ORIENTACIÓN DE PANTALLA
+   GRAVEDAD SEGÚN ORIENTACIÓN
    ========================================================= */
 
 function obtenerAnguloPantalla() {
 
-    /*
-     * Primero intentamos obtener el ángulo real
-     * de la pantalla.
-     */
-
-    let angle = 0;
-
-    try {
-
-        if (
-            screen.orientation &&
-            Number.isFinite(
-                screen.orientation.angle
-            )
-        ) {
-
-            angle =
-                Number(
-                    screen.orientation.angle
-                );
-        }
-
-    } catch (_) {}
-
-    /*
-     * Fallback para navegadores que no actualizan
-     * correctamente screen.orientation.
-     */
-
     if (
-        !Number.isFinite(angle)
+        screen.orientation &&
+        Number.isFinite(
+            screen.orientation.angle
+        )
     ) {
-
-        angle = 0;
+        return (
+            screen.orientation.angle +
+            360
+        ) % 360;
     }
 
-    /*
-     * Compatibilidad con navegadores antiguos.
-     */
-
     if (
-        window.orientation !== undefined &&
-        Number.isFinite(window.orientation) &&
-        angle === 0
+        Number.isFinite(
+            window.orientation
+        )
     ) {
-
-        angle =
-            Number(window.orientation);
+        return (
+            window.orientation +
+            360
+        ) % 360;
     }
 
-    angle =
-        ((angle % 360) + 360) % 360;
-
-    return angle;
+    return 0;
 }
-
-/* =========================================================
-   GRAVEDAD CORREGIDA POR ORIENTACIÓN
-   ========================================================= */
 
 function screenGravity() {
 
-    let x =
-        Number(gravity.x) || 0;
+    let x = gravity.x;
+    let y = gravity.y;
 
-    let y =
-        Number(gravity.y) || 0;
-
-    /*
-     * En muchos teléfonos:
-
-     * vertical:
-     * X = izquierda/derecha
-     * Y = arriba/abajo
-
-     * landscape:
-     * los ejes físicos siguen siendo los mismos,
-     * pero la pantalla gira.
-
-     * Aquí convertimos siempre a coordenadas
-     * de la pantalla.
-     */
-
-    const angle =
+    const a =
         obtenerAnguloPantalla();
 
-    if (angle === 90) {
+    if (a === 90) {
 
-        const oldX = x;
+        const q = x;
 
         x = y;
-        y = -oldX;
+        y = -q;
 
-    } else if (angle === 180) {
+    } else if (a === 180) {
 
         x = -x;
         y = -y;
 
-    } else if (angle === 270) {
+    } else if (a === 270) {
 
-        const oldX = x;
+        const q = x;
 
         x = -y;
-        y = oldX;
+        y = q;
     }
 
     return {
@@ -1145,22 +1043,6 @@ function screenGravity() {
 
 /* =========================================================
    CÁLCULO DEL PÉNDULO
-   =========================================================
-
-   0° =
-   péndulo completamente vertical hacia abajo.
-
-   Positivo =
-   inclinación hacia la derecha.
-
-   Negativo =
-   inclinación hacia la izquierda.
-
-   La misma convención se usa en:
-
-   - transportador
-   - lectura
-   - estampado
    ========================================================= */
 
 function calcularAnguloPendulo() {
@@ -1184,6 +1066,13 @@ function calcularAnguloPendulo() {
     if (magnitude < 0.1) {
         return 0;
     }
+
+    /*
+     * 0° = vertical hacia abajo.
+     *
+     * Positivo = derecha.
+     * Negativo = izquierda.
+     */
 
     let ang =
         Math.atan2(
@@ -1209,24 +1098,23 @@ function calcularAnguloPendulo() {
 }
 
 /* =========================================================
-   DIBUJAR TRANSPORTADOR
+   TRANSPORTADOR
    =========================================================
 
-   NUEVO DISEÑO:
+   DISEÑO:
 
-                 -180°       180°
-                    \       /
-                     \     /
-                      \   /
-                       \ /
-                        ●
-                        |
-                        |
-                        ↓
-                       0°
+              PARTE PLANA
+        180° ----------- 0° ----------- 180°
+                  |
+                  |
+                  |
+                 PÉNDULO
+                  |
+                  v
 
-   El centro está ARRIBA.
-   El arco está ABAJO.
+   El arco siempre está HACIA ABAJO.
+
+   NO se dibuja círculo completo.
    ========================================================= */
 
 function dibujarTransportador() {
@@ -1288,38 +1176,58 @@ function dibujarTransportador() {
         h
     );
 
-    /*
-     * El centro del transportador queda arriba.
-     *
-     * Se adapta tanto a vertical como a landscape.
-     */
+    /* =====================================================
+       ADAPTACIÓN VERTICAL / HORIZONTAL
+       ===================================================== */
 
-    const cx =
+    const vertical =
+        h >= w;
+
+    let cx =
         w / 2;
 
     /*
-     * En vertical usamos una posición superior
-     * suficientemente cómoda para que el transportador
-     * no tape demasiado la cámara.
+     * En vertical colocamos el transportador
+     * un poco más abajo para que sea cómodo.
+     *
+     * En horizontal queda cerca de la parte superior.
      */
 
-    const cy =
-        Math.max(
-            75,
-            Math.min(
-                h * .16,
-                150
-            )
-        );
+    let cy;
+
+    if (vertical) {
+
+        cy =
+            Math.max(
+                125,
+                h * .18
+            );
+
+    } else {
+
+        cy =
+            Math.max(
+                100,
+                h * .16
+            );
+    }
 
     /*
-     * Radio adaptable.
+     * El radio depende del ancho disponible.
+     *
+     * Nunca se sale de la pantalla.
      */
 
-    const radius =
+    const radioMax =
         Math.min(
             w * .43,
-            h * .34
+            h * .42
+        );
+
+    const radius =
+        Math.max(
+            90,
+            radioMax
         );
 
     /* =====================================================
@@ -1328,43 +1236,48 @@ function dibujarTransportador() {
 
     c.save();
 
-    c.strokeStyle =
-        'rgba(255,255,255,.92)';
-
-    c.lineWidth =
-        3;
-
-    c.lineCap =
-        'round';
+    /*
+     * Arco:
+     *
+     * 180° = izquierda
+     * 90°  = arriba-izquierda
+     * 0°   = abajo
+     * -90° = arriba-derecha
+     * -180° = derecha
+     *
+     * PERO visualmente queremos:
+     *
+     * 180° ---------------- 0° ---------------- 180°
+     * izquierda                                  derecha
+     *              \              /
+     *               \            /
+     *                \__________/
+     *
+     * Es decir, arco hacia abajo.
+     */
 
     c.beginPath();
 
-    /*
-     * Nuestro ángulo:
-
-     * 0°   = abajo
-     * +90° = derecha
-     * -90° = izquierda
-     * ±180° = arriba/extremos
-
-     * Por eso el arco va desde -180
-     * hasta +180 pasando por abajo.
-     */
-
-    const pasos = 240;
+    const segmentos = 180;
 
     for (
         let i = 0;
-        i <= pasos;
+        i <= segmentos;
         i++
     ) {
 
-        const deg =
-            -180 +
-            (360 * i / pasos);
+        /*
+         * t:
+         * -90 = izquierda
+         * +90 = derecha
+         */
+
+        const t =
+            -90 +
+            i;
 
         const rad =
-            deg *
+            t *
             Math.PI /
             180;
 
@@ -1374,7 +1287,7 @@ function dibujarTransportador() {
             Math.sin(rad);
 
         const y =
-            cy -
+            cy +
             radius *
             Math.cos(rad);
 
@@ -1394,47 +1307,91 @@ function dibujarTransportador() {
         }
     }
 
+    c.strokeStyle =
+        'rgba(255,255,255,.95)';
+
+    c.lineWidth =
+        3;
+
     c.stroke();
 
     /* =====================================================
-       MARCAS CADA GRADO
+       LÍNEA PLANA SUPERIOR
+       ===================================================== */
+
+    c.beginPath();
+
+    c.moveTo(
+        cx - radius,
+        cy
+    );
+
+    c.lineTo(
+        cx + radius,
+        cy
+    );
+
+    c.strokeStyle =
+        'rgba(255,255,255,.95)';
+
+    c.lineWidth =
+        3;
+
+    c.stroke();
+
+    /* =====================================================
+       MARCAS DE GRADOS
        ===================================================== */
 
     for (
-        let deg = -180;
-        deg <= 180;
+        let deg = -90;
+        deg <= 90;
         deg++
     ) {
+
+        /*
+         * Convertimos:
+
+         * deg -90 = extremo izquierdo
+         * deg   0 = centro
+         * deg +90 = extremo derecho
+         */
 
         const rad =
             deg *
             Math.PI /
             180;
 
-        let largo = 7;
+        const x =
+            cx +
+            radius *
+            Math.sin(rad);
+
+        const y =
+            cy +
+            radius *
+            Math.cos(rad);
+
+        let largo =
+            7;
 
         if (
             deg % 10 === 0
         ) {
 
-            largo = 24;
+            largo = 25;
 
         } else if (
             deg % 5 === 0
         ) {
 
-            largo = 15;
+            largo = 16;
         }
 
-        const x1 =
-            cx +
-            radius *
-            Math.sin(rad);
-
-        const y1 =
-            cy -
-            radius *
-            Math.cos(rad);
+        /*
+         * Las marcas entran hacia el interior
+         * del semicírculo.
+         */
 
         const x2 =
             cx +
@@ -1442,15 +1399,15 @@ function dibujarTransportador() {
             Math.sin(rad);
 
         const y2 =
-            cy -
+            cy +
             (radius - largo) *
             Math.cos(rad);
 
         c.beginPath();
 
         c.moveTo(
-            x1,
-            y1
+            x,
+            y
         );
 
         c.lineTo(
@@ -1458,22 +1415,17 @@ function dibujarTransportador() {
             y2
         );
 
-        /*
-         * El 0° se marca en verde.
-         * El resto blanco.
-         */
-
         c.strokeStyle =
             deg === 0
                 ? '#00ff00'
-                : 'rgba(255,255,255,.88)';
+                : 'rgba(255,255,255,.90)';
 
         c.lineWidth =
             deg === 0
                 ? 4
                 : deg % 10 === 0
                     ? 3
-                    : 1.4;
+                    : 1.5;
 
         c.stroke();
     }
@@ -1489,16 +1441,22 @@ function dibujarTransportador() {
         'middle';
 
     c.font =
-        'bold 12px Arial';
+        vertical
+            ? 'bold 13px Arial'
+            : 'bold 12px Arial';
 
     /*
-     * En teléfonos pequeños mostramos
-     * solamente cada 10 grados.
+     * Aquí mostramos la escala como:
+
+     * 90 ... 80 ... 10 0 10 ... 80 ... 90
+     *
+     * El valor del plomado sigue siendo
+     * la diferencia respecto a la vertical.
      */
 
     for (
-        let deg = -180;
-        deg <= 180;
+        let deg = -90;
+        deg <= 90;
         deg += 10
     ) {
 
@@ -1508,7 +1466,7 @@ function dibujarTransportador() {
             180;
 
         const textRadius =
-            radius - 39;
+            radius - 42;
 
         const tx =
             cx +
@@ -1516,9 +1474,17 @@ function dibujarTransportador() {
             Math.sin(rad);
 
         const ty =
-            cy -
+            cy +
             textRadius *
             Math.cos(rad);
+
+        /*
+         * El número se muestra como
+         * desviación respecto al centro.
+         */
+
+        const numero =
+            Math.abs(deg);
 
         c.fillStyle =
             deg === 0
@@ -1526,45 +1492,14 @@ function dibujarTransportador() {
                 : '#ffffff';
 
         c.fillText(
-            `${deg}°`,
+            `${numero}°`,
             tx,
             ty
         );
     }
 
     /* =====================================================
-       LÍNEA DE 0°
-       ===================================================== */
-
-    c.beginPath();
-
-    c.moveTo(
-        cx,
-        cy
-    );
-
-    c.lineTo(
-        cx,
-        cy + radius
-    );
-
-    c.strokeStyle =
-        'rgba(0,170,255,.75)';
-
-    c.lineWidth =
-        2;
-
-    c.setLineDash([
-        8,
-        8
-    ]);
-
-    c.stroke();
-
-    c.setLineDash([]);
-
-    /* =====================================================
-       CENTRO / PUNTO DE GIRO
+       CENTRO / PUNTO DE SUSPENSIÓN
        ===================================================== */
 
     c.beginPath();
@@ -1572,18 +1507,18 @@ function dibujarTransportador() {
     c.arc(
         cx,
         cy,
-        9,
+        7,
         0,
         Math.PI * 2
     );
 
     c.fillStyle =
-        '#ff3b30';
+        '#ffffff';
 
     c.fill();
 
     c.strokeStyle =
-        '#ffffff';
+        '#ff3030';
 
     c.lineWidth =
         2;
@@ -1600,16 +1535,14 @@ function dibujarTransportador() {
         180;
 
     /*
-     * El péndulo comienza exactamente
-     * en el centro del transportador.
-     *
-     * 0° = vertical hacia abajo.
+     * El péndulo parte del centro
+     * y baja hacia la pantalla.
      */
 
     const longitud =
         Math.min(
-            h * .55,
-            w * .52
+            h * .58,
+            w * .62
         );
 
     const px =
@@ -1622,9 +1555,45 @@ function dibujarTransportador() {
         longitud *
         Math.cos(ang);
 
-    /* =====================================================
-       CONTORNO NEGRO
-       ===================================================== */
+    /*
+     * Línea de referencia vertical.
+     *
+     * Azul para distinguirla del péndulo.
+     */
+
+    c.beginPath();
+
+    c.moveTo(
+        cx,
+        cy
+    );
+
+    c.lineTo(
+        cx,
+        Math.min(
+            h,
+            cy + longitud
+        )
+    );
+
+    c.strokeStyle =
+        'rgba(0,150,255,.75)';
+
+    c.lineWidth =
+        2;
+
+    c.setLineDash([
+        8,
+        8
+    ]);
+
+    c.stroke();
+
+    c.setLineDash([]);
+
+    /*
+     * Péndulo negro de contorno.
+     */
 
     c.beginPath();
 
@@ -1639,7 +1608,7 @@ function dibujarTransportador() {
     );
 
     c.strokeStyle =
-        'rgba(0,0,0,.88)';
+        'rgba(0,0,0,.85)';
 
     c.lineWidth =
         9;
@@ -1649,9 +1618,9 @@ function dibujarTransportador() {
 
     c.stroke();
 
-    /* =====================================================
-       PÉNDULO ROJO
-       ===================================================== */
+    /*
+     * Péndulo rojo.
+     */
 
     c.beginPath();
 
@@ -1676,16 +1645,16 @@ function dibujarTransportador() {
 
     c.stroke();
 
-    /* =====================================================
-       PESO DEL PÉNDULO
-       ===================================================== */
+    /*
+     * Peso del péndulo.
+     */
 
     c.beginPath();
 
     c.arc(
         px,
         py,
-        11,
+        9,
         0,
         Math.PI * 2
     );
@@ -1709,21 +1678,23 @@ function dibujarTransportador() {
        LECTURA
        ===================================================== */
 
-    const grados =
-        Math.abs(plomadoGrados);
+    const gradosAbs =
+        Math.abs(
+            plomadoGrados
+        );
 
     plomadoReading.textContent =
-        `PLOMADO: ${grados.toFixed(2)}°`;
+        `PLOMADO: ${gradosAbs.toFixed(2)}°`;
 
     const sentido =
-        grados < 0.005
+        gradosAbs < 0.005
             ? 'CENTRADO'
             : plomadoGrados > 0
                 ? 'DERECHA'
                 : 'IZQUIERDA';
 
     plomadoHelp.textContent =
-        `Péndulo: ${grados.toFixed(2)}° ${sentido}`;
+        `Péndulo: ${gradosAbs.toFixed(2)}° ${sentido}`;
 }
 
 /* =========================================================
@@ -1747,6 +1718,7 @@ function actualizarPlomado() {
             : 'Sensores: esperando…';
 
     if (plomadoActivo) {
+
         dibujarTransportador();
     }
 }
@@ -1828,7 +1800,7 @@ async function iniciarCamara() {
             modo === 'medir'
                 ? '📏 MEDIR POSTE: captura la foto y marca R1, R2, BASE y PUNTA.'
                 : modo === 'plomado'
-                    ? '📐 PLOMADO: coloca el teléfono en vertical u horizontal y alinea el poste con el péndulo.'
+                    ? '📐 PLOMADO: coloca el teléfono vertical u horizontal y alinea el poste con el péndulo.'
                     : '✅ Cámara lista.'
         );
 
@@ -1981,9 +1953,7 @@ async function tomarFoto() {
         const ctx =
             capturaBase();
 
-        /* =====================================================
-           NORMAL
-           ===================================================== */
+        /* NORMAL */
 
         if (
             modo === 'normal'
@@ -2018,9 +1988,7 @@ async function tomarFoto() {
             return;
         }
 
-        /* =====================================================
-           MEDIR
-           ===================================================== */
+        /* MEDIR */
 
         if (
             modo === 'medir'
@@ -2046,35 +2014,18 @@ async function tomarFoto() {
             return;
         }
 
-        /* =====================================================
-           PLOMADO
-           ===================================================== */
+        /* PLOMADO */
 
         if (
             modo === 'plomado'
         ) {
 
-            /*
-             * Capturamos la lectura exactamente
-             * en el momento de pulsar FOTO.
-             */
-
             plomadoGrados =
                 calcularAnguloPendulo();
 
-            const grados =
-                Math.abs(plomadoGrados);
-
             setStatus(
-                `📐 Lectura capturada: ${grados.toFixed(2)}°.`
+                `📐 Lectura capturada: ${Math.abs(plomadoGrados).toFixed(2)}°. Guardando fotografía.`
             );
-
-            /*
-             * Guardamos la foto limpia.
-             *
-             * El transportador NO se quema en la foto.
-             * Solamente se estampa el resultado.
-             */
 
             fotoBase =
                 canvas.toDataURL(
@@ -2099,7 +2050,7 @@ async function tomarFoto() {
 }
 
 /* =========================================================
-   EDITOR DE MEDICIÓN
+   EDITOR MEDICIÓN
    ========================================================= */
 
 let measureEditor = null;
@@ -2183,8 +2134,8 @@ function abrirEditorMedicion() {
 function confirmarPlomado() {
 
     /*
-     * Quitamos el transportador de la pantalla
-     * para que NO aparezca en la fotografía.
+     * El transportador NUNCA se dibuja
+     * sobre la fotografía final.
      */
 
     plomadoOverlay.style.display =
@@ -2193,36 +2144,24 @@ function confirmarPlomado() {
     plomadoActivo =
         false;
 
-    /*
-     * IMPORTANTE:
-     *
-     * Usamos la lectura capturada, no una nueva lectura.
-     */
-
-    const lecturaFinal =
-        Number(
+    const grados =
+        Math.abs(
             plomadoGrados
         );
 
-    const grados =
-        Math.abs(
-            lecturaFinal
-        );
-
     const direccion =
-        grados < .005
+        Math.abs(plomadoGrados) < .005
             ? 'CENTRADO'
-            : lecturaFinal > 0
+            : plomadoGrados > 0
                 ? 'DERECHA'
                 : 'IZQUIERDA';
 
-    /*
-     * Volvemos a capturar la cámara limpia
-     * y estampamos solamente una vez.
-     */
-
     const ctx =
         capturaBase();
+
+    /*
+     * UN SOLO ESTAMPADO.
+     */
 
     dibujarEstampado(
         ctx,
@@ -2256,7 +2195,7 @@ function confirmarPlomado() {
 
                 anguloFirmado:
                     Number(
-                        lecturaFinal.toFixed(2)
+                        plomadoGrados.toFixed(2)
                     )
             }
         }
@@ -3441,89 +3380,55 @@ cancelSignalButton.addEventListener(
    CAMBIO DE ORIENTACIÓN
    ========================================================= */
 
-function actualizarInterfazOrientacion() {
+function actualizarOrientacion() {
 
     /*
-     * Forzamos redibujado inmediatamente
-     * cuando el usuario cambia entre vertical
-     * y landscape.
+     * Esperamos un instante porque algunos teléfonos
+     * actualizan las dimensiones después del evento.
      */
 
-    if (
-        modo === 'plomado'
-    ) {
-
-        requestAnimationFrame(
-            () => {
-
-                dibujarTransportador();
-                actualizarPlomado();
-            }
-        );
-    }
-
-    if (
-        arrowEditor &&
-        arrowCanvas
-    ) {
-
-        requestAnimationFrame(
-            ajustarCanvasFlecha
-        );
-    }
-}
-
-window.addEventListener(
-    'orientationchange',
-    () => {
-
-        setTimeout(
-            actualizarInterfazOrientacion,
-            150
-        );
-    }
-);
-
-if (screen.orientation) {
-
-    screen.orientation.addEventListener(
-        'change',
+    setTimeout(
         () => {
 
-            setTimeout(
-                actualizarInterfazOrientacion,
-                100
-            );
-        }
+            if (
+                modo === 'plomado'
+            ) {
+
+                dibujarTransportador();
+            }
+
+            if (
+                arrowEditor &&
+                arrowCanvas
+            ) {
+
+                ajustarCanvasFlecha();
+            }
+
+        },
+        100
     );
 }
 
-/* =========================================================
-   RESIZE
-   ========================================================= */
-
 window.addEventListener(
     'resize',
-    () => {
-
-        if (
-            arrowEditor &&
-            arrowCanvas
-        ) {
-
-            ajustarCanvasFlecha();
-        }
-
-        if (
-            modo === 'plomado'
-        ) {
-
-            requestAnimationFrame(
-                dibujarTransportador
-            );
-        }
-    }
+    actualizarOrientacion
 );
+
+window.addEventListener(
+    'orientationchange',
+    actualizarOrientacion
+);
+
+if (
+    screen.orientation
+) {
+
+    screen.orientation.addEventListener(
+        'change',
+        actualizarOrientacion
+    );
+}
 
 /* =========================================================
    INICIO
@@ -3566,24 +3471,6 @@ window.addEventListener(
         );
 
         await iniciarCamara();
-
-        /*
-         * Después de que la cámara y sensores
-         * estén listos, volvemos a dibujar.
-         */
-
-        if (modo === 'plomado') {
-
-            setTimeout(
-                () => {
-
-                    dibujarTransportador();
-                    actualizarPlomado();
-
-                },
-                300
-            );
-        }
     }
 );
 
@@ -3591,3 +3478,4 @@ window.addEventListener(
 
 </body>
 </html>
+```
