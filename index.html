@@ -3894,13 +3894,20 @@ window.addEventListener('load', async () => {
     }
 
     // MODO NORMAL
-    specialPanel.style.display='none';
+specialPanel.style.display='none';
 
-    setStatus(
-        '📷 Listo. Pulsa FOTO para abrir la cámara.'
-    );
+setStatus(
+    '📷 Abriendo cámara…'
+);
 
-    console.log('CAMERA STAMP: MODO NORMAL LISTO');
+console.log('CAMERA STAMP: INICIANDO CÁMARA EN MODO NORMAL');
+
+await iniciarCamara();
+
+console.log(
+    'CAMERA STAMP: CÁMARA TERMINÓ DE INICIARSE',
+    cameraStream
+);
 });
 
 
