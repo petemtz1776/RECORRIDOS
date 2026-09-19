@@ -1,279 +1,326 @@
 <!DOCTYPE html>
+
 <html lang="es">
 
 <head>
-<meta charset="UTF-8">
+    <meta charset="UTF-8">
 
-<meta name="viewport"
-      content="width=device-width,initial-scale=1,viewport-fit=cover">
+```
+<meta
+    name="viewport"
+    content="width=device-width,initial-scale=1,viewport-fit=cover"
+>
 
 <title>PETES CAMERA STAMP</title>
 
 <style>
+    * {
+        box-sizing: border-box;
+    }
 
-*{
-    box-sizing:border-box;
-}
+    html,
+    body {
+        margin: 0;
+        width: 100%;
+        height: 100%;
+        background: #000;
+        color: #fff;
+        font-family: Arial, sans-serif;
+        overflow: hidden;
+    }
 
-html,
-body{
-    margin:0;
-    width:100%;
-    height:100%;
-    background:#000;
-    color:#fff;
-    font-family:Arial,sans-serif;
-    overflow:hidden;
-}
+    #cameraContainer {
+        position: relative;
+        width: 100%;
+        height: 100dvh;
+        max-width: 1200px;
+        margin: auto;
+        background: #000;
+        overflow: hidden;
+    }
 
-#cameraContainer{
-    position:relative;
-    width:100%;
-    height:100dvh;
-    background:#000;
-    overflow:hidden;
-}
+    #video {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        background: #000;
+    }
 
-#video{
-    position:absolute;
-    inset:0;
-    width:100%;
-    height:100%;
-    object-fit:cover;
-    background:#000;
-}
+    #canvas,
+    #workCanvas {
+        display: none;
+    }
 
-#canvas,
-#workCanvas{
-    display:none;
-}
+    /* =====================================================
+       HUD
+       ===================================================== */
 
-/* =========================================================
-   HUD
-========================================================= */
+    #hud {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 20;
+        padding: 8px;
+        pointer-events: none;
+    }
 
-#hud{
-    position:absolute;
-    top:0;
-    left:0;
-    right:0;
-    z-index:20;
-    padding:8px;
-    pointer-events:none;
-}
+    #modeBadge {
+        display: inline-block;
+        background: rgba(0, 0, 0, .72);
+        padding: 8px 10px;
+        border-radius: 8px;
+        font-weight: bold;
+        font-size: 13px;
+    }
 
-#modeBadge{
-    display:inline-block;
-    background:rgba(0,0,0,.72);
-    padding:8px 10px;
-    border-radius:8px;
-    font-weight:bold;
-    font-size:13px;
-}
+    #sensorHud {
+        margin-top: 6px;
+        display: inline-block;
+        background: rgba(0, 0, 0, .62);
+        padding: 7px 10px;
+        border-radius: 8px;
+        font-size: 12px;
+    }
 
-#sensorHud{
-    margin-top:6px;
-    display:inline-block;
-    background:rgba(0,0,0,.62);
-    padding:7px 10px;
-    border-radius:8px;
-    font-size:12px;
-}
+    /* =====================================================
+       PLOMADO
+       ===================================================== */
 
-/* =========================================================
-   PLOMADO
-========================================================= */
+    #plomadoOverlay {
+        position: absolute;
+        inset: 0;
+        z-index: 18;
+        pointer-events: none;
+        display: none;
+    }
 
-#plomadoOverlay{
-    position:absolute;
-    inset:0;
-    z-index:18;
-    pointer-events:none;
-    display:none;
-}
+    #plomadoCanvas {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        display: block;
+    }
 
-#plomadoCanvas{
-    position:absolute;
-    inset:0;
-    width:100%;
-    height:100%;
-    display:block;
-}
+    #plomadoReading {
+        position: absolute;
+        z-index: 19;
+        top: 43%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0, 0, 0, .72);
+        border: 2px solid rgba(255, 255, 255, .8);
+        border-radius: 12px;
+        padding: 8px 15px;
+        font-size: 22px;
+        font-weight: bold;
+        white-space: nowrap;
+        text-align: center;
+    }
 
-#plomadoReading{
-    position:absolute;
-    z-index:19;
-    top:52%;
-    left:50%;
-    transform:translate(-50%,-50%);
-    background:rgba(0,0,0,.72);
-    border:2px solid rgba(255,255,255,.75);
-    border-radius:12px;
-    padding:8px 15px;
-    font-size:22px;
-    font-weight:bold;
-    white-space:nowrap;
-    text-align:center;
-}
+    #plomadoHelp {
+        position: absolute;
+        z-index: 19;
+        top: calc(43% + 42px);
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, .58);
+        border-radius: 8px;
+        padding: 6px 10px;
+        font-size: 12px;
+        white-space: nowrap;
+    }
 
-#plomadoHelp{
-    position:absolute;
-    z-index:19;
-    top:59%;
-    left:50%;
-    transform:translateX(-50%);
-    background:rgba(0,0,0,.58);
-    border-radius:8px;
-    padding:6px 10px;
-    font-size:12px;
-    white-space:nowrap;
-}
+    /* =====================================================
+       CONTROLES
+       ===================================================== */
 
-/* =========================================================
-   CONTROLES
-========================================================= */
+    #controls {
+        position: absolute;
+        z-index: 30;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        padding: 9px 7px calc(9px + env(safe-area-inset-bottom));
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 6px;
+        background: linear-gradient(
+            transparent,
+            rgba(0, 0, 0, .96)
+        );
+    }
 
-#controls{
-    position:absolute;
-    z-index:30;
-    left:0;
-    right:0;
-    bottom:0;
-    padding:9px 7px calc(9px + env(safe-area-inset-bottom));
-    display:flex;
-    flex-wrap:wrap;
-    justify-content:center;
-    gap:6px;
-    background:linear-gradient(
-        transparent,
-        rgba(0,0,0,.96)
-    );
-}
+    button,
+    input {
+        font: inherit;
+    }
 
-button{
-    font:inherit;
-    border:0;
-    border-radius:8px;
-    padding:11px 13px;
-    min-height:46px;
-    font-weight:bold;
-    cursor:pointer;
-}
+    button {
+        border: 0;
+        border-radius: 8px;
+        padding: 11px 13px;
+        min-height: 46px;
+        font-weight: bold;
+        cursor: pointer;
+    }
 
-button:disabled{
-    opacity:.45;
-}
+    button:disabled {
+        opacity: .45;
+    }
 
-#takeButton{
-    background:#4caf50;
-    color:#fff;
-}
+    #takeButton {
+        background: #4caf50;
+        color: #fff;
+    }
 
-#signalButton{
-    background:#ff9800;
-    color:#fff;
-}
+    #signalButton {
+        background: #ff9800;
+        color: #fff;
+    }
 
-#confirmButton{
-    background:#4caf50;
-    color:#fff;
-    display:none;
-}
+    #confirmButton {
+        background: #4caf50;
+        color: #fff;
+        display: none;
+    }
 
-#cancelSignalButton{
-    background:#f44336;
-    color:#fff;
-    display:none;
-}
+    #cancelSignalButton {
+        background: #f44336;
+        color: #fff;
+        display: none;
+    }
 
-#cancelButton{
-    background:#b71c1c;
-    color:#fff;
-}
+    #cancelButton {
+        background: #b71c1c;
+        color: #fff;
+    }
 
-/* =========================================================
-   PANEL MEDICION
-========================================================= */
+    /* =====================================================
+       PANEL MEDICIÓN
+       ===================================================== */
 
-#specialPanel{
-    position:absolute;
-    z-index:40;
-    left:8px;
-    right:8px;
-    top:76px;
-    background:rgba(0,0,0,.82);
-    padding:12px;
-    border-radius:10px;
-    display:none;
-    pointer-events:auto;
-}
+    #specialPanel {
+        position: absolute;
+        z-index: 40;
+        left: 8px;
+        right: 8px;
+        top: 76px;
+        background: rgba(0, 0, 0, .82);
+        padding: 12px;
+        border-radius: 10px;
+        display: none;
+        pointer-events: auto;
+    }
 
-#specialPanel label{
-    display:block;
-    font-size:13px;
-    font-weight:bold;
-    margin-bottom:5px;
-}
+    #specialPanel label {
+        display: block;
+        font-size: 13px;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
 
-#knownMeasure{
-    width:100%;
-    padding:10px;
-    border-radius:7px;
-    border:1px solid #777;
-    background:#fff;
-    color:#000;
-    font-size:17px;
-    margin-bottom:7px;
-}
+    #knownMeasure {
+        width: 100%;
+        padding: 10px;
+        border-radius: 7px;
+        border: 1px solid #777;
+        background: #fff;
+        color: #000;
+        font-size: 17px;
+        margin-bottom: 7px;
+    }
 
-#specialHelp{
-    font-size:13px;
-    line-height:1.35;
-}
+    #specialHelp {
+        font-size: 13px;
+        line-height: 1.35;
+    }
 
-#measureStart{
-    margin-top:8px;
-    background:#1565c0;
-    color:#fff;
-    width:100%;
-}
+    #measureStart {
+        margin-top: 8px;
+        background: #1565c0;
+        color: #fff;
+        width: 100%;
+    }
 
-/* =========================================================
-   STATUS
-========================================================= */
+    /* =====================================================
+       EDITOR FLECHA
+       ===================================================== */
 
-#status{
-    position:absolute;
-    z-index:60;
-    left:8px;
-    right:8px;
-    bottom:88px;
-    background:rgba(0,0,0,.7);
-    padding:8px;
-    border-radius:8px;
-    font-size:12px;
-    white-space:pre-line;
-    pointer-events:none;
-}
+    #arrowEditor {
+        position: absolute;
+        inset: 0;
+        z-index: 25;
+        background: #000;
+        touch-action: none;
+        overflow: hidden;
+        overscroll-behavior: none;
+        user-select: none;
+        -webkit-user-select: none;
+        -webkit-touch-callout: none;
+    }
 
-#preview{
-    display:none;
-    max-width:100%;
-    max-height:100%;
-    margin:auto;
-}
+    /* =====================================================
+       STATUS
+       ===================================================== */
 
+    #status {
+        position: absolute;
+        z-index: 60;
+        left: 8px;
+        right: 8px;
+        bottom: 88px;
+        background: rgba(0, 0, 0, .7);
+        padding: 8px;
+        border-radius: 8px;
+        font-size: 12px;
+        white-space: pre-line;
+        pointer-events: none;
+    }
+
+    #preview {
+        display: none;
+        max-width: 100%;
+        max-height: 100%;
+        margin: auto;
+    }
+
+    @media (max-width: 420px) {
+
+        button {
+            padding: 10px 9px;
+            font-size: 12px;
+            min-height: 45px;
+        }
+
+        #specialPanel {
+            top: 68px;
+        }
+
+        #plomadoReading {
+            font-size: 19px;
+        }
+    }
 </style>
+```
+
 </head>
 
 <body>
 
 <div id="cameraContainer">
 
-<video id="video"
-       autoplay
-       playsinline
-       muted></video>
+```
+<video
+    id="video"
+    autoplay
+    playsinline
+    muted
+></video>
 
 <canvas id="canvas"></canvas>
 <canvas id="workCanvas"></canvas>
@@ -292,9 +339,9 @@ button:disabled{
 
 </div>
 
-<!-- =========================================================
-     TRANSPORTADOR
-========================================================= -->
+<!-- =====================================================
+     PLOMADO
+     ===================================================== -->
 
 <div id="plomadoOverlay">
 
@@ -310,9 +357,9 @@ button:disabled{
 
 </div>
 
-<!-- =========================================================
-     PANEL MEDICION
-========================================================= -->
+<!-- =====================================================
+     PANEL MEDICIÓN
+     ===================================================== -->
 
 <div id="specialPanel">
 
@@ -325,7 +372,8 @@ button:disabled{
         type="number"
         step="0.001"
         min="0.001"
-        placeholder="Ejemplo: 2.00 metros">
+        placeholder="Ejemplo: 2.00 metros"
+    >
 
     <div id="specialHelp"></div>
 
@@ -362,18 +410,18 @@ button:disabled{
     </button>
 
 </div>
+```
 
 </div>
 
 <img id="preview">
 
 <script>
-
 'use strict';
 
 /* =========================================================
-   PARAMETROS
-========================================================= */
+   PARÁMETROS
+   ========================================================= */
 
 const params =
     new URLSearchParams(location.search);
@@ -384,16 +432,18 @@ const tipo =
 let modo =
     params.get('modo') || 'normal';
 
-if(
-    String(tipo).trim().toUpperCase()==='MEDIR POSTE'
-){
-    modo='medir';
+if (
+    String(tipo).trim().toUpperCase() ===
+    'MEDIR POSTE'
+) {
+    modo = 'medir';
 }
 
-if(
-    String(tipo).trim().toUpperCase()==='PLOMADO POSTE'
-){
-    modo='plomado';
+if (
+    String(tipo).trim().toUpperCase() ===
+    'PLOMADO POSTE'
+) {
+    modo = 'plomado';
 }
 
 const proyecto =
@@ -410,7 +460,7 @@ const rama =
 
 /* =========================================================
    LOGO
-========================================================= */
+   ========================================================= */
 
 const LOGO_DRIVE_ID =
     '12EpwDn_A9mR0DfZSiGoTi2NS9zFNYPVP';
@@ -425,7 +475,7 @@ const LOGO_URL_ALTERNATIVO =
 
 /* =========================================================
    DOM
-========================================================= */
+   ========================================================= */
 
 const video =
     document.getElementById('video');
@@ -489,185 +539,302 @@ const plomadoHelp =
 
 /* =========================================================
    ESTADO
-========================================================= */
+   ========================================================= */
 
-let cameraStream=null;
+let cameraStream = null;
 
-let gpsActual=null;
+let gpsActual = null;
 
-let fechaFoto=null;
+let fechaFoto = null;
 
-let logoImagen=null;
+let logoImagen = null;
 
-let logoListo=false;
+let logoListo = false;
 
-let zonaLogo=null;
+let zonaLogo = null;
 
-let zonaEstampado=null;
+let zonaEstampado = null;
 
-let modoSenalar=false;
+let modoSenalar = false;
 
-let fotoBase=null;
+let fotoBase = null;
+
+/* Flecha */
+
+let flechaX = null;
+let flechaY = null;
+let flechaAngulo = 0;
+let flechaEscala = 1;
+
+let gestoActivo = false;
+let toqueInicial = null;
 
 /* Sensores */
 
-let motionHandler=null;
+let motionHandler = null;
+let orientationHandler = null;
 
-let orientationHandler=null;
-
-let gravity={
-    x:0,
-    y:9.8,
-    z:0
+let gravity = {
+    x: 0,
+    y: -9.8,
+    z: 0
 };
 
-let gravityReady=false;
+let gravityReady = false;
+
+/*
+ * Valores de orientación.
+ *
+ * beta  = inclinación adelante/atrás
+ * gamma = inclinación izquierda/derecha
+ */
+
+let deviceBeta = null;
+let deviceGamma = null;
+let deviceAlpha = null;
+
+let orientationReady = false;
 
 /* Plomado */
 
-let plomadoGrados=0;
+let plomadoGrados = 0;
 
-let plomadoActivo=false;
+let plomadoActivo = false;
+
+/* Medición */
+
+let referenceReal = null;
 
 /* =========================================================
    GENERALES
-========================================================= */
+   ========================================================= */
 
-function setStatus(text){
-    status.textContent=text;
+function setStatus(text) {
+    status.textContent = text;
 }
 
-function nombreTipo(t){
+function nombreTipo(t) {
 
-    if(t==='poste'){
+    if (t === 'poste') {
         return 'POSTE';
     }
 
-    if(t==='carriers'){
+    if (t === 'carriers') {
         return 'CAJAS CARRIERS';
     }
 
     return String(t).toUpperCase();
 }
 
-function formatDate(d){
+function formatDate(d) {
 
-    const p=
-        n=>String(n).padStart(2,'0');
+    const p =
+        n => String(n).padStart(2, '0');
 
-    return(
-        d.getFullYear()+
-        p(d.getMonth()+1)+
-        p(d.getDate())+
+    return (
+        d.getFullYear() +
+        p(d.getMonth() + 1) +
+        p(d.getDate()) +
         '_' +
-        p(d.getHours())+
-        p(d.getMinutes())+
+        p(d.getHours()) +
+        p(d.getMinutes()) +
         p(d.getSeconds())
     );
 }
 
-function crearNombreFoto(t,d){
+function crearNombreFoto(t, d) {
 
-    return(
+    return (
         'STAMPED_' +
-        nombreTipo(t).replace(/\s+/g,'_')+
+        nombreTipo(t).replace(/\s+/g, '_') +
         '_' +
-        formatDate(d)+
+        formatDate(d) +
         '.jpg'
     );
 }
 
-function clamp(v,a,b){
+function clamp(v, a, b) {
 
     return Math.max(
         a,
-        Math.min(b,v)
+        Math.min(b, v)
     );
 }
 
 /* =========================================================
-   LOGO
-========================================================= */
+   ORIENTACIÓN DE PANTALLA
+   ========================================================= */
 
-function cargarLogo(){
+function obtenerOrientacionPantalla() {
 
-    logoListo=false;
+    let angle = null;
 
-    logoImagen=new Image();
+    if (
+        screen &&
+        screen.orientation &&
+        Number.isFinite(
+            screen.orientation.angle
+        )
+    ) {
+        angle =
+            Number(
+                screen.orientation.angle
+            );
+    }
 
-    logoImagen.crossOrigin='anonymous';
+    /*
+     * Fallback para Safari/iPhone antiguos.
+     */
 
-    logoImagen.onload=()=>{
-        logoListo=true;
-    };
+    if (
+        angle === null &&
+        Number.isFinite(window.orientation)
+    ) {
+        angle =
+            Number(window.orientation);
+    }
 
-    logoImagen.onerror=()=>{
+    /*
+     * Si el navegador no entrega ángulo,
+     * inferimos solamente portrait/landscape.
+     */
 
-        const im=new Image();
+    if (angle === null) {
 
-        im.crossOrigin='anonymous';
+        if (
+            window.innerWidth >
+            window.innerHeight
+        ) {
+            angle = 90;
+        } else {
+            angle = 0;
+        }
+    }
 
-        im.onload=()=>{
+    angle =
+        ((angle % 360) + 360) % 360;
 
-            logoImagen=im;
-            logoListo=true;
+    /*
+     * Normalizamos a los cuatro estados.
+     */
 
-        };
+    if (angle < 45 || angle >= 315) {
+        return 0;
+    }
 
-        im.src=LOGO_URL_ALTERNATIVO;
-    };
+    if (angle < 135) {
+        return 90;
+    }
 
-    logoImagen.src=LOGO_URL;
+    if (angle < 225) {
+        return 180;
+    }
+
+    return 270;
 }
 
-function dibujarLogo(ctx,w,h){
+/* =========================================================
+   LOGO
+   ========================================================= */
 
-    zonaLogo=null;
+function cargarLogo() {
 
-    if(!logoListo || !logoImagen){
+    logoListo = false;
+
+    logoImagen = new Image();
+
+    logoImagen.crossOrigin =
+        'anonymous';
+
+    logoImagen.onload = () => {
+        logoListo = true;
+    };
+
+    logoImagen.onerror = () => {
+
+        const im = new Image();
+
+        im.crossOrigin =
+            'anonymous';
+
+        im.onload = () => {
+
+            logoImagen = im;
+            logoListo = true;
+        };
+
+        im.src =
+            LOGO_URL_ALTERNATIVO;
+    };
+
+    logoImagen.src =
+        LOGO_URL;
+}
+
+function dibujarLogo(ctx, w, h) {
+
+    zonaLogo = null;
+
+    if (
+        !logoListo ||
+        !logoImagen
+    ) {
         return;
     }
 
-    const maxW=w*.18;
-    const maxH=h*.14;
+    const maxW =
+        w * .18;
 
-    const s=Math.min(
-        maxW/logoImagen.width,
-        maxH/logoImagen.height
-    );
+    const maxH =
+        h * .14;
 
-    const lw=logoImagen.width*s;
-    const lh=logoImagen.height*s;
+    const s =
+        Math.min(
+            maxW / logoImagen.width,
+            maxH / logoImagen.height
+        );
 
-    const m=Math.max(
-        20,
-        w*.025
-    );
+    const lw =
+        logoImagen.width * s;
 
-    const x=w-lw-m;
-    const y=m;
+    const lh =
+        logoImagen.height * s;
 
-    const b=Math.max(
-        15,
-        w*.012
-    );
+    const m =
+        Math.max(
+            20,
+            w * .025
+        );
 
-    zonaLogo={
-        x:x-b,
-        y:y-b,
-        width:lw+b*2,
-        height:lh+b*2
+    const x =
+        w - lw - m;
+
+    const y =
+        m;
+
+    const b =
+        Math.max(
+            15,
+            w * .012
+        );
+
+    zonaLogo = {
+        x: x - b,
+        y: y - b,
+        width: lw + b * 2,
+        height: lh + b * 2
     };
 
     ctx.save();
 
-    ctx.fillStyle='rgba(0,0,0,.2)';
+    ctx.fillStyle =
+        'rgba(0,0,0,.2)';
 
     ctx.fillRect(
-        x-5,
-        y-5,
-        lw+10,
-        lh+10
+        x - 5,
+        y - 5,
+        lw + 10,
+        lh + 10
     );
 
     ctx.drawImage(
@@ -683,34 +850,40 @@ function dibujarLogo(ctx,w,h){
 
 /* =========================================================
    ESTAMPADO
-========================================================= */
+   ========================================================= */
 
 function dibujarEstampado(
     ctx,
     w,
     h,
-    extra=[]
-){
+    extra = []
+) {
 
-    const s=Math.max(w,h)/1200;
+    const s =
+        Math.max(w, h) / 1200;
 
-    const pad=Math.round(16*s);
+    const pad =
+        Math.round(16 * s);
 
-    const font=Math.max(
-        16,
-        Math.round(20*s)
-    );
+    const font =
+        Math.max(
+            16,
+            Math.round(20 * s)
+        );
 
-    const line=27*s;
+    const line =
+        27 * s;
 
-    const pos=gpsActual;
+    const pos =
+        gpsActual;
 
-    const d=fechaFoto||new Date();
+    const d =
+        fechaFoto || new Date();
 
-    const base=[
-        `PROYECTO: ${proyecto||'SIN PROYECTO'}`,
-        `TIPO PROYECTO: ${tipoProyecto||'SIN TIPO'}`,
-        `HUB: ${hub||'-'}  RAMA: ${rama||'-'}`,
+    const base = [
+        `PROYECTO: ${proyecto || 'SIN PROYECTO'}`,
+        `TIPO PROYECTO: ${tipoProyecto || 'SIN TIPO'}`,
+        `HUB: ${hub || '-'}  RAMA: ${rama || '-'}`,
         `TIPO FOTO: ${nombreTipo(tipo)}`,
         `${d.toLocaleDateString('es-MX')}  ${d.toLocaleTimeString('es-MX')}`,
         pos
@@ -719,33 +892,41 @@ function dibujarEstampado(
         ...extra
     ];
 
-    ctx.font=`bold ${font}px Arial`;
+    ctx.font =
+        `bold ${font}px Arial`;
 
-    let tw=0;
+    let tw = 0;
 
-    base.forEach(text=>{
-        tw=Math.max(
+    base.forEach(text => {
+
+        tw = Math.max(
             tw,
             ctx.measureText(text).width
         );
     });
 
-    const bw=tw+pad*2;
+    const bw =
+        tw + pad * 2;
 
-    const bh=base.length*line+pad*2;
+    const bh =
+        base.length * line +
+        pad * 2;
 
-    const x=pad;
+    const x =
+        pad;
 
-    const y=h-bh-pad;
+    const y =
+        h - bh - pad;
 
-    zonaEstampado={
-        x:x-18,
-        y:y-18,
-        width:bw+36,
-        height:bh+36
+    zonaEstampado = {
+        x: x - 18,
+        y: y - 18,
+        width: bw + 36,
+        height: bh + 36
     };
 
-    ctx.fillStyle='rgba(0,0,0,.48)';
+    ctx.fillStyle =
+        'rgba(0,0,0,.48)';
 
     ctx.beginPath();
 
@@ -754,94 +935,120 @@ function dibujarEstampado(
         y,
         bw,
         bh,
-        10*s
+        10 * s
     );
 
     ctx.fill();
 
-    ctx.fillStyle='rgba(255,255,255,.96)';
+    ctx.fillStyle =
+        'rgba(255,255,255,.96)';
 
-    ctx.textBaseline='top';
+    ctx.textBaseline =
+        'top';
 
-    base.forEach((text,i)=>{
+    base.forEach((text, i) => {
 
         ctx.fillText(
             text,
-            x+pad,
-            y+pad+i*line
+            x + pad,
+            y + pad + i * line
         );
-
     });
 
-    dibujarLogo(ctx,w,h);
+    dibujarLogo(
+        ctx,
+        w,
+        h
+    );
 }
 
 /* =========================================================
-   ORIENTACION DEL TELEFONO
-========================================================= */
+   SENSORES
+   ========================================================= */
 
-function obtenerOrientacion(){
+async function iniciarSensores() {
 
-    if(
-        screen.orientation &&
-        Number.isFinite(screen.orientation.angle)
-    ){
-        return screen.orientation.angle;
-    }
+    try {
 
-    if(
-        typeof window.orientation==='number'
-    ){
-        return window.orientation;
-    }
+        /*
+         * Algunos navegadores requieren permiso.
+         */
 
-    return 0;
-}
+        if (
+            typeof DeviceMotionEvent !==
+            'undefined' &&
+            typeof DeviceMotionEvent.requestPermission ===
+            'function'
+        ) {
 
-/* =========================================================
-   SENSOR
-========================================================= */
+            const p =
+                await DeviceMotionEvent
+                    .requestPermission();
 
-async function iniciarSensores(){
+            if (p !== 'granted') {
 
-    try{
-
-        if(
-            typeof DeviceMotionEvent!=='undefined' &&
-            typeof DeviceMotionEvent.requestPermission==='function'
-        ){
-
-            const permiso=
-                await DeviceMotionEvent.requestPermission();
-
-            if(permiso!=='granted'){
                 throw new Error(
                     'Permiso de movimiento no concedido'
                 );
             }
         }
 
-        motionHandler=e=>{
+        if (
+            typeof DeviceOrientationEvent !==
+            'undefined' &&
+            typeof DeviceOrientationEvent.requestPermission ===
+            'function'
+        ) {
 
-            const a=
+            const p =
+                await DeviceOrientationEvent
+                    .requestPermission();
+
+            if (p !== 'granted') {
+
+                throw new Error(
+                    'Permiso de orientación no concedido'
+                );
+            }
+        }
+
+        /* -----------------------------------------------
+           DEVICEMOTION
+           ----------------------------------------------- */
+
+        motionHandler = e => {
+
+            const a =
                 e.accelerationIncludingGravity ||
-                e.acceleration ||
-                {};
+                e.acceleration;
 
-            if(
-                Number.isFinite(a.x) &&
-                Number.isFinite(a.y)
-            ){
+            if (!a) {
+                return;
+            }
 
-                gravity={
-                    x:a.x,
-                    y:a.y,
-                    z:Number.isFinite(a.z)
-                        ? a.z
+            const x =
+                Number(a.x);
+
+            const y =
+                Number(a.y);
+
+            const z =
+                Number(a.z);
+
+            if (
+                Number.isFinite(x) &&
+                Number.isFinite(y)
+            ) {
+
+                gravity = {
+                    x,
+                    y,
+                    z: Number.isFinite(z)
+                        ? z
                         : 0
                 };
 
-                gravityReady=true;
+                gravityReady = true;
 
                 actualizarPlomado();
             }
@@ -850,40 +1057,108 @@ async function iniciarSensores(){
         window.addEventListener(
             'devicemotion',
             motionHandler,
-            {passive:true}
+            {
+                passive: true
+            }
         );
 
-        if(
-            typeof DeviceOrientationEvent!=='undefined' &&
-            typeof DeviceOrientationEvent.requestPermission==='function'
-        ){
+        /* -----------------------------------------------
+           DEVICEORIENTATION
+           ----------------------------------------------- */
 
-            const permiso=
-                await DeviceOrientationEvent.requestPermission();
+        orientationHandler = e => {
 
-            if(permiso!=='granted'){
-                throw new Error(
-                    'Permiso de orientación no concedido'
-                );
+            if (
+                Number.isFinite(e.beta)
+            ) {
+                deviceBeta =
+                    Number(e.beta);
             }
-        }
 
-        orientationHandler=()=>{
+            if (
+                Number.isFinite(e.gamma)
+            ) {
+                deviceGamma =
+                    Number(e.gamma);
+            }
+
+            if (
+                Number.isFinite(e.alpha)
+            ) {
+                deviceAlpha =
+                    Number(e.alpha);
+            }
+
+            orientationReady =
+                Number.isFinite(deviceBeta) ||
+                Number.isFinite(deviceGamma);
+
             actualizarPlomado();
         };
 
         window.addEventListener(
             'deviceorientation',
             orientationHandler,
-            {passive:true}
+            {
+                passive: true
+            }
         );
 
-        sensorHud.textContent=
+        /*
+         * Redibujar inmediatamente al cambiar
+         * la orientación del teléfono.
+         */
+
+        if (
+            screen &&
+            screen.orientation
+        ) {
+
+            screen.orientation.addEventListener(
+                'change',
+                () => {
+
+                    setTimeout(
+                        () => {
+
+                            actualizarPlomado();
+
+                            if (plomadoActivo) {
+                                dibujarTransportador();
+                            }
+
+                        },
+                        100
+                    );
+                }
+            );
+        }
+
+        window.addEventListener(
+            'orientationchange',
+            () => {
+
+                setTimeout(
+                    () => {
+
+                        actualizarPlomado();
+
+                        if (plomadoActivo) {
+                            dibujarTransportador();
+                        }
+
+                    },
+                    150
+                );
+            }
+        );
+
+        sensorHud.textContent =
             'Sensores: ACTIVOS';
 
-    }catch(e){
+    } catch (e) {
 
-        sensorHud.textContent=
+        sensorHud.textContent =
             'Sensores: no disponibles';
 
         console.warn(e);
@@ -891,96 +1166,104 @@ async function iniciarSensores(){
 }
 
 /* =========================================================
-   GRAVEDAD EN COORDENADAS DE PANTALLA
-========================================================= */
+   CÁLCULO CON DEVICEORIENTATION
+   =========================================================
 
-function obtenerGravedadPantalla(){
+   La clave de esta versión:
 
-    let x=gravity.x;
-    let y=gravity.y;
+   PORTRAIT:
+       gamma controla la inclinación izquierda/derecha.
 
-    const ang=
-        ((obtenerOrientacion()%360)+360)%360;
+   LANDSCAPE:
+       beta controla la inclinación izquierda/derecha.
+
+   Así evitamos que en vertical el péndulo termine
+   horizontal por interpretar el eje equivocado.
+   ========================================================= */
+
+function calcularDesdeDeviceOrientation() {
+
+    if (!orientationReady) {
+        return null;
+    }
+
+    const orientacion =
+        obtenerOrientacionPantalla();
+
+    let ang = 0;
+
+    if (
+        orientacion === 0
+    ) {
+
+        /*
+         * Portrait normal.
+         *
+         * Gamma positivo = derecha.
+         */
+
+        ang =
+            Number(deviceGamma || 0);
+
+    } else if (
+        orientacion === 90
+    ) {
+
+        /*
+         * Landscape principal.
+         *
+         * Beta pasa a representar el eje
+         * izquierda/derecha de la pantalla.
+         */
+
+        ang =
+            -Number(deviceBeta || 0);
+
+    } else if (
+        orientacion === 180
+    ) {
+
+        /*
+         * Portrait invertido.
+         */
+
+        ang =
+            -Number(deviceGamma || 0);
+
+    } else {
+
+        /*
+         * Landscape secundario.
+         */
+
+        ang =
+            Number(deviceBeta || 0);
+    }
 
     /*
-     * Coordenadas del sensor:
-     *
-     * X = derecha del teléfono
-     * Y = arriba del teléfono
-     *
-     * Convertimos esas coordenadas
-     * a coordenadas visuales de pantalla.
+     * Evita lecturas extrañas cuando beta
+     * pasa por la zona de 90/270 grados.
      */
 
-    if(ang===90){
-
-        const temp=x;
-
-        x=y;
-        y=-temp;
-
-    }else if(ang===180){
-
-        x=-x;
-        y=-y;
-
-    }else if(ang===270){
-
-        const temp=x;
-
-        x=-y;
-        y=temp;
+    while (ang > 180) {
+        ang -= 360;
     }
 
-    return{x,y};
-}
-
-/* =========================================================
-   ANGULO DEL PENDULO
-========================================================= */
-
-function calcularAnguloPendulo(){
-
-    const g=obtenerGravedadPantalla();
-
-    if(
-        !Number.isFinite(g.x) ||
-        !Number.isFinite(g.y)
-    ){
-        return 0;
-    }
-
-    const magnitud=
-        Math.hypot(g.x,g.y);
-
-    if(magnitud<0.1){
-        return 0;
+    while (ang < -180) {
+        ang += 360;
     }
 
     /*
-     * El péndulo apunta hacia donde cae la gravedad.
-     *
-     * 0° = vertical hacia abajo.
-     *
-     * + = derecha.
-     *
-     * - = izquierda.
+     * Para plomado utilizamos solamente
+     * la inclinación útil de -90 a +90.
      */
 
-    let ang=
-        Math.atan2(
-            g.x,
-            -g.y
-        )*
-        180/
-        Math.PI;
-
-    while(ang>180){
-        ang-=360;
+    if (ang > 90) {
+        ang = 180 - ang;
     }
 
-    while(ang<-180){
-        ang+=360;
+    if (ang < -90) {
+        ang = -180 - ang;
     }
 
     return clamp(
@@ -991,40 +1274,656 @@ function calcularAnguloPendulo(){
 }
 
 /* =========================================================
-   DIBUJAR TRANSPORTADOR
-========================================================= */
+   FALLBACK DEVICEMOTION
+   ========================================================= */
 
-function dibujarTransportador(){
+function calcularDesdeMotion() {
 
-    const w=
+    if (!gravityReady) {
+        return 0;
+    }
+
+    let x =
+        Number(gravity.x) || 0;
+
+    let y =
+        Number(gravity.y) || 0;
+
+    /*
+     * Transformamos el vector de los ejes del
+     * dispositivo al eje de la pantalla.
+     */
+
+    const o =
+        obtenerOrientacionPantalla();
+
+    let sx;
+    let sy;
+
+    if (o === 0) {
+
+        sx = x;
+        sy = y;
+
+    } else if (o === 90) {
+
+        sx = y;
+        sy = -x;
+
+    } else if (o === 180) {
+
+        sx = -x;
+        sy = -y;
+
+    } else {
+
+        sx = -y;
+        sy = x;
+    }
+
+    const magnitud =
+        Math.hypot(
+            sx,
+            sy
+        );
+
+    /*
+     * Si el teléfono está prácticamente plano,
+     * la proyección XY no es válida.
+     */
+
+    if (magnitud < 0.8) {
+        return 0;
+    }
+
+    let ang =
+        Math.atan2(
+            sx,
+            -sy
+        ) *
+        180 /
+        Math.PI;
+
+    while (ang > 180) {
+        ang -= 360;
+    }
+
+    while (ang < -180) {
+        ang += 360;
+    }
+
+    if (ang > 90) {
+        ang = 180 - ang;
+    }
+
+    if (ang < -90) {
+        ang = -180 - ang;
+    }
+
+    return clamp(
+        ang,
+        -90,
+        90
+    );
+}
+
+/* =========================================================
+   ÁNGULO FINAL
+   ========================================================= */
+
+function calcularAnguloPendulo() {
+
+    /*
+     * Preferimos deviceorientation porque ya entrega
+     * beta/gamma asociados a la orientación física.
+     */
+
+    const orientationAngle =
+        calcularDesdeDeviceOrientation();
+
+    if (
+        Number.isFinite(
+            orientationAngle
+        )
+    ) {
+
+        return orientationAngle;
+    }
+
+    return calcularDesdeMotion();
+}
+
+/* =========================================================
+   GEOMETRÍA DEL TRANSPORTADOR
+   =========================================================
+
+   IMPORTANTE:
+
+   ES UN MEDIO CÍRCULO.
+
+   La parte plana está arriba.
+
+   El arco está hacia ABAJO.
+
+   El centro del transportador está arriba.
+
+   -90° = izquierda
+     0° = abajo
+   +90° = derecha
+
+   Esto coincide con la dirección del péndulo.
+   ========================================================= */
+
+function obtenerGeometriaTransportador(
+    w,
+    h
+) {
+
+    const cx =
+        w / 2;
+
+    /*
+     * Centro siempre arriba.
+     */
+
+    const cy =
+        Math.max(
+            115,
+            h * 0.18
+        );
+
+    /*
+     * En vertical hacemos el arco un poco
+     * más pequeño para dejar espacio.
+     */
+
+    const radius =
+        Math.min(
+            w * 0.43,
+            h * 0.31
+        );
+
+    return {
+        cx,
+        cy,
+        radius
+    };
+}
+
+/* =========================================================
+   DIBUJAR MEDIO CÍRCULO
+   ========================================================= */
+
+function dibujarTransportadorEnContexto(
+    c,
+    w,
+    h,
+    angulo,
+    opciones = {}
+) {
+
+    const escala =
+        opciones.escala || 1;
+
+    const mostrarPendulo =
+        opciones.mostrarPendulo !== false;
+
+    const g =
+        obtenerGeometriaTransportador(
+            w,
+            h
+        );
+
+    const cx =
+        g.cx;
+
+    const cy =
+        g.cy;
+
+    const radius =
+        g.radius *
+        escala;
+
+    c.save();
+
+    /*
+     * =====================================================
+     * ARCO: SOLO MEDIO CÍRCULO
+     * =====================================================
+     *
+     * Va desde -90 hasta +90 según nuestra escala,
+     * pero visualmente recorre TODO el arco inferior.
+     */
+
+    c.beginPath();
+
+    const pasos = 180;
+
+    for (
+        let i = 0;
+        i <= pasos;
+        i++
+    ) {
+
+        const deg =
+            -90 + i;
+
+        const rad =
+            deg *
+            Math.PI /
+            180;
+
+        /*
+         * 0° apunta hacia ABAJO.
+         */
+
+        const x =
+            cx +
+            radius *
+            Math.sin(rad);
+
+        const y =
+            cy +
+            radius *
+            Math.cos(rad);
+
+        if (i === 0) {
+            c.moveTo(x, y);
+        } else {
+            c.lineTo(x, y);
+        }
+    }
+
+    c.strokeStyle =
+        'rgba(255,255,255,.95)';
+
+    c.lineWidth =
+        Math.max(
+            2,
+            3 * escala
+        );
+
+    c.stroke();
+
+    /*
+     * =====================================================
+     * PARTE PLANA SUPERIOR
+     * =====================================================
+     */
+
+    c.beginPath();
+
+    c.moveTo(
+        cx - radius,
+        cy
+    );
+
+    c.lineTo(
+        cx + radius,
+        cy
+    );
+
+    c.strokeStyle =
+        'rgba(255,255,255,.95)';
+
+    c.lineWidth =
+        Math.max(
+            2,
+            3 * escala
+        );
+
+    c.stroke();
+
+    /*
+     * =====================================================
+     * MARCAS
+     * =====================================================
+     */
+
+    for (
+        let deg = -90;
+        deg <= 90;
+        deg++
+    ) {
+
+        const rad =
+            deg *
+            Math.PI /
+            180;
+
+        let largo = 8;
+
+        if (
+            deg % 10 === 0
+        ) {
+
+            largo = 25;
+
+        } else if (
+            deg % 5 === 0
+        ) {
+
+            largo = 17;
+        }
+
+        const x1 =
+            cx +
+            radius *
+            Math.sin(rad);
+
+        const y1 =
+            cy +
+            radius *
+            Math.cos(rad);
+
+        const x2 =
+            cx +
+            (radius - largo) *
+            Math.sin(rad);
+
+        const y2 =
+            cy +
+            (radius - largo) *
+            Math.cos(rad);
+
+        c.beginPath();
+
+        c.moveTo(
+            x1,
+            y1
+        );
+
+        c.lineTo(
+            x2,
+            y2
+        );
+
+        c.strokeStyle =
+            deg === 0
+                ? '#00ff66'
+                : 'rgba(255,255,255,.9)';
+
+        c.lineWidth =
+            deg === 0
+                ? 4
+                : deg % 10 === 0
+                    ? 3
+                    : 1.5;
+
+        c.stroke();
+    }
+
+    /*
+     * =====================================================
+     * NÚMEROS
+     * =====================================================
+     */
+
+    c.textAlign =
+        'center';
+
+    c.textBaseline =
+        'middle';
+
+    c.font =
+        `bold ${Math.max(12, 13 * escala)}px Arial`;
+
+    for (
+        let deg = -90;
+        deg <= 90;
+        deg += 10
+    ) {
+
+        const rad =
+            deg *
+            Math.PI /
+            180;
+
+        const textRadius =
+            radius - 42;
+
+        const tx =
+            cx +
+            textRadius *
+            Math.sin(rad);
+
+        const ty =
+            cy +
+            textRadius *
+            Math.cos(rad);
+
+        c.fillStyle =
+            deg === 0
+                ? '#00ff66'
+                : '#fff';
+
+        c.fillText(
+            `${deg}°`,
+            tx,
+            ty
+        );
+    }
+
+    /*
+     * =====================================================
+     * CENTRO
+     * =====================================================
+     */
+
+    c.beginPath();
+
+    c.arc(
+        cx,
+        cy,
+        8,
+        0,
+        Math.PI * 2
+    );
+
+    c.fillStyle =
+        '#1565ff';
+
+    c.fill();
+
+    c.strokeStyle =
+        '#fff';
+
+    c.lineWidth =
+        2;
+
+    c.stroke();
+
+    /*
+     * =====================================================
+     * PÉNDULO
+     * =====================================================
+     */
+
+    if (mostrarPendulo) {
+
+        const rad =
+            angulo *
+            Math.PI /
+            180;
+
+        /*
+         * El péndulo es más largo que el arco.
+         */
+
+        const longitud =
+            Math.min(
+                h * .52,
+                w * .58
+            );
+
+        const px =
+            cx +
+            longitud *
+            Math.sin(rad);
+
+        const py =
+            cy +
+            longitud *
+            Math.cos(rad);
+
+        /*
+         * Línea vertical de referencia.
+         * Azul.
+         */
+
+        c.beginPath();
+
+        c.moveTo(
+            cx,
+            cy
+        );
+
+        c.lineTo(
+            cx,
+            Math.min(
+                h,
+                cy + longitud
+            )
+        );
+
+        c.strokeStyle =
+            'rgba(0,160,255,.78)';
+
+        c.lineWidth =
+            2;
+
+        c.setLineDash([
+            8,
+            8
+        ]);
+
+        c.stroke();
+
+        c.setLineDash([]);
+
+        /*
+         * Sombra negra del péndulo.
+         */
+
+        c.beginPath();
+
+        c.moveTo(
+            cx,
+            cy
+        );
+
+        c.lineTo(
+            px,
+            py
+        );
+
+        c.strokeStyle =
+            'rgba(0,0,0,.85)';
+
+        c.lineWidth =
+            9;
+
+        c.lineCap =
+            'round';
+
+        c.stroke();
+
+        /*
+         * Péndulo rojo.
+         */
+
+        c.beginPath();
+
+        c.moveTo(
+            cx,
+            cy
+        );
+
+        c.lineTo(
+            px,
+            py
+        );
+
+        c.strokeStyle =
+            '#ff3030';
+
+        c.lineWidth =
+            4;
+
+        c.lineCap =
+            'round';
+
+        c.stroke();
+
+        /*
+         * Peso.
+         */
+
+        c.beginPath();
+
+        c.arc(
+            px,
+            py,
+            10,
+            0,
+            Math.PI * 2
+        );
+
+        c.fillStyle =
+            '#ff3030';
+
+        c.fill();
+
+        c.strokeStyle =
+            '#fff';
+
+        c.lineWidth =
+            2;
+
+        c.stroke();
+    }
+
+    c.restore();
+}
+
+/* =========================================================
+   DIBUJAR TRANSPORTADOR EN PANTALLA
+   ========================================================= */
+
+function dibujarTransportador() {
+
+    const w =
         plomadoOverlay.clientWidth;
 
-    const h=
+    const h =
         plomadoOverlay.clientHeight;
 
-    if(!w || !h){
+    if (!w || !h) {
         return;
     }
 
-    const dpr=
-        window.devicePixelRatio||1;
+    const dpr =
+        window.devicePixelRatio || 1;
 
-    const realW=
-        Math.round(w*dpr);
+    const rw =
+        Math.round(w * dpr);
 
-    const realH=
-        Math.round(h*dpr);
+    const rh =
+        Math.round(h * dpr);
 
-    if(
-        plomadoCanvas.width!==realW ||
-        plomadoCanvas.height!==realH
-    ){
+    if (
+        plomadoCanvas.width !== rw ||
+        plomadoCanvas.height !== rh
+    ) {
 
-        plomadoCanvas.width=realW;
-        plomadoCanvas.height=realH;
+        plomadoCanvas.width =
+            rw;
+
+        plomadoCanvas.height =
+            rh;
     }
 
-    const c=
+    const c =
         plomadoCanvas.getContext('2d');
 
     c.setTransform(
@@ -1043,767 +1942,91 @@ function dibujarTransportador(){
         h
     );
 
-    /*
-     * ======================================================
-     * MEDIO CIRCULO
-     *
-     * PARTE PLANA ARRIBA
-     * ARCO HACIA ABAJO
-     *
-     * El centro está arriba.
-     * Los extremos del arco quedan abajo/laterales.
-     * ======================================================
-     */
-
-    const cx=w/2;
-
-    /*
-     * En vertical colocamos el centro
-     * en aproximadamente 15% de la pantalla.
-     *
-     * En horizontal se adapta automáticamente.
-     */
-
-    const cy=
-        Math.max(
-            75,
-            Math.min(
-                h*.22,
-                150
-            )
-        );
-
-    /*
-     * El radio se adapta al ancho y alto.
-     */
-
-    const radius=
-        Math.min(
-            w*.43,
-            h*.38
-        );
-
-    /* ======================================================
-       ARCO DEL TRANSPORTADOR
-    ====================================================== */
-
-    c.save();
-
-    c.strokeStyle=
-        'rgba(255,255,255,.95)';
-
-    c.lineWidth=3;
-
-    c.beginPath();
-
-    /*
-     * 180° a la izquierda
-     * 0° arriba
-     * -180° a la derecha
-     *
-     * Arco inferior.
-     */
-
-    c.arc(
-        cx,
-        cy,
-        radius,
-        0,
-        Math.PI,
-        false
-    );
-
-    c.stroke();
-
-    /*
-     * Línea plana superior.
-     */
-
-    c.beginPath();
-
-    c.moveTo(
-        cx-radius,
-        cy
-    );
-
-    c.lineTo(
-        cx+radius,
-        cy
-    );
-
-    c.stroke();
-
-    /* ======================================================
-       MARCAS
-    ====================================================== */
-
-    for(
-        let deg=-90;
-        deg<=90;
-        deg++
-    ){
-
-        const rad=
-            deg*Math.PI/180;
-
-        /*
-         * 0 = vertical hacia abajo
-         */
-
-        const x=
-            cx+
-            radius*
-            Math.sin(rad);
-
-        const y=
-            cy+
-            radius*
-            Math.cos(rad);
-
-        let largo=8;
-
-        if(deg%10===0){
-            largo=25;
-        }else if(deg%5===0){
-            largo=17;
+    dibujarTransportadorEnContexto(
+        c,
+        w,
+        h,
+        plomadoGrados,
+        {
+            mostrarPendulo: true,
+            escala: 1
         }
-
-        const x2=
-            cx+
-            (radius-largo)*
-            Math.sin(rad);
-
-        const y2=
-            cy+
-            (radius-largo)*
-            Math.cos(rad);
-
-        c.beginPath();
-
-        c.moveTo(
-            x,
-            y
-        );
-
-        c.lineTo(
-            x2,
-            y2
-        );
-
-        c.strokeStyle=
-            deg===0
-                ? '#00ff00'
-                : 'rgba(255,255,255,.9)';
-
-        c.lineWidth=
-            deg===0
-                ? 4
-                : deg%10===0
-                    ? 3
-                    : 1.5;
-
-        c.stroke();
-    }
-
-    /* ======================================================
-       NUMEROS
-    ====================================================== */
-
-    c.textAlign='center';
-    c.textBaseline='middle';
-
-    c.font=
-        'bold 13px Arial';
-
-    for(
-        let deg=-90;
-        deg<=90;
-        deg+=10
-    ){
-
-        const rad=
-            deg*Math.PI/180;
-
-        const textRadius=
-            radius-43;
-
-        const tx=
-            cx+
-            textRadius*
-            Math.sin(rad);
-
-        const ty=
-            cy+
-            textRadius*
-            Math.cos(rad);
-
-        c.fillStyle=
-            deg===0
-                ? '#00ff00'
-                : '#ffffff';
-
-        c.fillText(
-            `${deg}°`,
-            tx,
-            ty
-        );
-    }
-
-    /* ======================================================
-       CENTRO
-    ====================================================== */
-
-    c.beginPath();
-
-    c.arc(
-        cx,
-        cy,
-        7,
-        0,
-        Math.PI*2
     );
 
-    c.fillStyle='#ff3b30';
-
-    c.fill();
-
-    c.strokeStyle='#fff';
-
-    c.lineWidth=2;
-
-    c.stroke();
-
-    /* ======================================================
-       LINEA VERTICAL DE REFERENCIA
-    ====================================================== */
-
-    const longitud=
-        Math.min(
-            radius*.92,
-            h*.50
-        );
-
-    c.beginPath();
-
-    c.moveTo(
-        cx,
-        cy
-    );
-
-    c.lineTo(
-        cx,
-        cy+longitud
-    );
-
-    c.strokeStyle=
-        'rgba(0,170,255,.75)';
-
-    c.lineWidth=2;
-
-    c.setLineDash([
-        7,
-        7
-    ]);
-
-    c.stroke();
-
-    c.setLineDash([]);
-
-    /* ======================================================
-       PENDULO
-    ====================================================== */
-
-    const ang=
-        plomadoGrados*
-        Math.PI/
-        180;
-
-    const px=
-        cx+
-        longitud*
-        Math.sin(ang);
-
-    const py=
-        cy+
-        longitud*
-        Math.cos(ang);
-
-    /*
-     * Contorno oscuro.
-     */
-
-    c.beginPath();
-
-    c.moveTo(
-        cx,
-        cy
-    );
-
-    c.lineTo(
-        px,
-        py
-    );
-
-    c.strokeStyle=
-        'rgba(0,0,0,.8)';
-
-    c.lineWidth=6;
-
-    c.lineCap='round';
-
-    c.stroke();
-
-    /*
-     * Línea roja del péndulo.
-     * MÁS DELGADA.
-     */
-
-    c.beginPath();
-
-    c.moveTo(
-        cx,
-        cy
-    );
-
-    c.lineTo(
-        px,
-        py
-    );
-
-    c.strokeStyle='#ff3030';
-
-    c.lineWidth=3;
-
-    c.lineCap='round';
-
-    c.stroke();
-
-    /*
-     * Peso.
-     */
-
-    c.beginPath();
-
-    c.arc(
-        px,
-        py,
-        8,
-        0,
-        Math.PI*2
-    );
-
-    c.fillStyle='#ff3030';
-
-    c.fill();
-
-    c.strokeStyle='#fff';
-
-    c.lineWidth=2;
-
-    c.stroke();
-
-    c.restore();
-
-    /* ======================================================
-       LECTURA
-    ====================================================== */
-
-    plomadoReading.textContent=
+    plomadoReading.textContent =
         `PLOMADO: ${Math.abs(plomadoGrados).toFixed(2)}°`;
 
-    const sentido=
-        Math.abs(plomadoGrados)<.005
+    const sentido =
+        Math.abs(plomadoGrados) < 0.005
             ? 'CENTRADO'
-            : plomadoGrados>0
+            : plomadoGrados > 0
                 ? 'DERECHA'
                 : 'IZQUIERDA';
 
-    plomadoHelp.textContent=
+    plomadoHelp.textContent =
         `Péndulo: ${Math.abs(plomadoGrados).toFixed(2)}° ${sentido}`;
 }
 
 /* =========================================================
    ACTUALIZAR PLOMADO
-========================================================= */
+   ========================================================= */
 
-function actualizarPlomado(){
+function actualizarPlomado() {
 
-    if(modo!=='plomado'){
+    if (modo !== 'plomado') {
         return;
     }
 
-    plomadoGrados=
+    plomadoGrados =
         calcularAnguloPendulo();
 
-    sensorHud.textContent=
-        gravityReady
-            ? `Sensores: ACTIVOS | ${plomadoGrados.toFixed(2)}°`
+    const orientacion =
+        obtenerOrientacionPantalla();
+
+    const orientacionTexto =
+        orientacion === 0 ||
+        orientacion === 180
+            ? 'VERTICAL'
+            : 'HORIZONTAL';
+
+    sensorHud.textContent =
+        gravityReady || orientationReady
+            ? `Sensores: ACTIVOS | ${orientacionTexto} | ${plomadoGrados.toFixed(2)}°`
             : 'Sensores: esperando…';
 
-    if(plomadoActivo){
+    if (plomadoActivo) {
         dibujarTransportador();
     }
 }
 
 /* =========================================================
-   CAPTURAR TRANSPORTADOR EN LA FOTO
-========================================================= */
+   ACTIVAR PLOMADO
+   ========================================================= */
 
-function dibujarTransportadorEnFoto(ctx,w,h){
+function activarPlomadoVisual() {
 
-    /*
-     * Esta función dibuja el MISMO transportador
-     * sobre el canvas de la fotografía.
-     */
-
-    const cx=w/2;
-
-    const cy=
-        Math.max(
-            75,
-            Math.min(
-                h*.22,
-                150
-            )
-        );
-
-    const radius=
-        Math.min(
-            w*.43,
-            h*.38
-        );
-
-    const escala=
-        Math.min(
-            w/900,
-            h/900
-        );
-
-    ctx.save();
-
-    /* ======================================================
-       ARCO
-    ====================================================== */
-
-    ctx.strokeStyle=
-        'rgba(255,255,255,.95)';
-
-    ctx.lineWidth=
-        Math.max(
-            3,
-            4*escala
-        );
-
-    ctx.beginPath();
-
-    ctx.arc(
-        cx,
-        cy,
-        radius,
-        0,
-        Math.PI,
-        false
-    );
-
-    ctx.stroke();
-
-    /* Línea plana */
-
-    ctx.beginPath();
-
-    ctx.moveTo(
-        cx-radius,
-        cy
-    );
-
-    ctx.lineTo(
-        cx+radius,
-        cy
-    );
-
-    ctx.stroke();
-
-    /* ======================================================
-       MARCAS Y GRADOS
-    ====================================================== */
-
-    for(
-        let deg=-90;
-        deg<=90;
-        deg++
-    ){
-
-        const rad=
-            deg*Math.PI/180;
-
-        const x=
-            cx+
-            radius*Math.sin(rad);
-
-        const y=
-            cy+
-            radius*Math.cos(rad);
-
-        let largo=
-            9*escala;
-
-        if(deg%10===0){
-            largo=28*escala;
-        }else if(deg%5===0){
-            largo=19*escala;
-        }
-
-        const x2=
-            cx+
-            (radius-largo)*Math.sin(rad);
-
-        const y2=
-            cy+
-            (radius-largo)*Math.cos(rad);
-
-        ctx.beginPath();
-
-        ctx.moveTo(
-            x,
-            y
-        );
-
-        ctx.lineTo(
-            x2,
-            y2
-        );
-
-        ctx.strokeStyle=
-            deg===0
-                ? '#00ff00'
-                : 'rgba(255,255,255,.92)';
-
-        ctx.lineWidth=
-            deg===0
-                ? 5*escala
-                : 2*escala;
-
-        ctx.stroke();
+    if (modo !== 'plomado') {
+        return;
     }
 
-    ctx.font=
-        `bold ${Math.max(20,26*escala)}px Arial`;
+    plomadoActivo =
+        true;
 
-    ctx.textAlign='center';
-    ctx.textBaseline='middle';
+    plomadoOverlay.style.display =
+        'block';
 
-    for(
-        let deg=-90;
-        deg<=90;
-        deg+=10
-    ){
-
-        const rad=
-            deg*Math.PI/180;
-
-        const tr=
-            radius-48*escala;
-
-        const tx=
-            cx+
-            tr*Math.sin(rad);
-
-        const ty=
-            cy+
-            tr*Math.cos(rad);
-
-        ctx.fillStyle=
-            deg===0
-                ? '#00ff00'
-                : '#ffffff';
-
-        /*
-         * Sombra para que los números
-         * sean visibles sobre la cámara.
-         */
-
-        ctx.strokeStyle='rgba(0,0,0,.85)';
-        ctx.lineWidth=5*escala;
-
-        ctx.strokeText(
-            `${deg}°`,
-            tx,
-            ty
-        );
-
-        ctx.fillText(
-            `${deg}°`,
-            tx,
-            ty
-        );
-    }
-
-    /* ======================================================
-       CENTRO
-    ====================================================== */
-
-    ctx.beginPath();
-
-    ctx.arc(
-        cx,
-        cy,
-        10*escala,
-        0,
-        Math.PI*2
-    );
-
-    ctx.fillStyle='#ff3b30';
-
-    ctx.fill();
-
-    ctx.strokeStyle='#fff';
-
-    ctx.lineWidth=3*escala;
-
-    ctx.stroke();
-
-    /* ======================================================
-       REFERENCIA VERTICAL
-    ====================================================== */
-
-    const longitud=
-        Math.min(
-            radius*.92,
-            h*.50
-        );
-
-    ctx.beginPath();
-
-    ctx.moveTo(
-        cx,
-        cy
-    );
-
-    ctx.lineTo(
-        cx,
-        cy+longitud
-    );
-
-    ctx.strokeStyle=
-        'rgba(0,170,255,.75)';
-
-    ctx.lineWidth=
-        Math.max(
-            2,
-            3*escala
-        );
-
-    ctx.setLineDash([
-        10*escala,
-        10*escala
-    ]);
-
-    ctx.stroke();
-
-    ctx.setLineDash([]);
-
-    /* ======================================================
-       PENDULO
-    ====================================================== */
-
-    const ang=
-        plomadoGrados*
-        Math.PI/
-        180;
-
-    const px=
-        cx+
-        longitud*Math.sin(ang);
-
-    const py=
-        cy+
-        longitud*Math.cos(ang);
-
-    /* sombra */
-
-    ctx.beginPath();
-
-    ctx.moveTo(
-        cx,
-        cy
-    );
-
-    ctx.lineTo(
-        px,
-        py
-    );
-
-    ctx.strokeStyle=
-        'rgba(0,0,0,.85)';
-
-    ctx.lineWidth=
-        Math.max(
-            5,
-            8*escala
-        );
-
-    ctx.lineCap='round';
-
-    ctx.stroke();
-
-    /* roja */
-
-    ctx.beginPath();
-
-    ctx.moveTo(
-        cx,
-        cy
-    );
-
-    ctx.lineTo(
-        px,
-        py
-    );
-
-    ctx.strokeStyle='#ff3030';
-
-    ctx.lineWidth=
-        Math.max(
-            2,
-            3*escala
-        );
-
-    ctx.stroke();
-
-    /* peso */
-
-    ctx.beginPath();
-
-    ctx.arc(
-        px,
-        py,
-        11*escala,
-        0,
-        Math.PI*2
-    );
-
-    ctx.fillStyle='#ff3030';
-
-    ctx.fill();
-
-    ctx.strokeStyle='#fff';
-
-    ctx.lineWidth=3*escala;
-
-    ctx.stroke();
-
-    ctx.restore();
+    dibujarTransportador();
 }
 
 /* =========================================================
-   CAMARA
-========================================================= */
+   CÁMARA
+   ========================================================= */
 
-async function iniciarCamara(){
+async function iniciarCamara() {
 
-    try{
+    try {
 
-        if(cameraStream){
+        if (cameraStream) {
             detenerCamara();
         }
 
@@ -1811,32 +2034,35 @@ async function iniciarCamara(){
             'Solicitando permiso de cámara…'
         );
 
-        cameraStream=
-            await navigator.mediaDevices.getUserMedia({
+        cameraStream =
+            await navigator.mediaDevices
+                .getUserMedia({
 
-                video:{
-                    facingMode:{
-                        ideal:'environment'
+                    video: {
+
+                        facingMode: {
+                            ideal: 'environment'
+                        },
+
+                        width: {
+                            ideal: 1920
+                        },
+
+                        height: {
+                            ideal: 1080
+                        }
                     },
 
-                    width:{
-                        ideal:1920
-                    },
+                    audio: false
+                });
 
-                    height:{
-                        ideal:1080
-                    }
-                },
-
-                audio:false
-            });
-
-        video.srcObject=
+        video.srcObject =
             cameraStream;
 
         await video.play();
 
-        takeButton.disabled=false;
+        takeButton.disabled =
+            false;
 
         cargarLogo();
 
@@ -1845,117 +2071,125 @@ async function iniciarCamara(){
         configurarModo();
 
         setStatus(
-            modo==='medir'
-                ? '📏 MEDIR POSTE: captura la foto y marca la referencia.'
-                : modo==='plomado'
+            modo === 'medir'
+                ? '📏 MEDIR POSTE: captura la foto y marca R1, R2, BASE y PUNTA.'
+                : modo === 'plomado'
                     ? '📐 PLOMADO: alinea el poste con el péndulo.'
                     : '✅ Cámara lista.'
         );
 
-    }catch(e){
+    } catch (e) {
 
         console.error(e);
 
         setStatus(
-            '❌ NO FUE POSIBLE ABRIR LA CÁMARA.\n'+
-            (e.name||'')+
-            '\n'+
-            (e.message||e)
+            '❌ NO FUE POSIBLE ABRIR LA CÁMARA.\n' +
+            (e.name || '') +
+            '\n' +
+            (e.message || e)
         );
 
-        takeButton.disabled=true;
+        takeButton.disabled =
+            true;
     }
 }
 
 /* =========================================================
    CONFIGURAR MODO
-========================================================= */
+   ========================================================= */
 
-function configurarModo(){
+function configurarModo() {
 
-    modeBadge.textContent=
-        modo==='medir'
+    modeBadge.textContent =
+        modo === 'medir'
             ? '📏 MEDIR POSTE'
-            : modo==='plomado'
+            : modo === 'plomado'
                 ? '📐 PLOMADO POSTE'
-                : '📷 '+nombreTipo(tipo);
+                : '📷 ' +
+                  nombreTipo(tipo);
 
-    signalButton.style.display=
-        modo==='normal'
+    signalButton.style.display =
+        modo === 'normal'
             ? 'inline-block'
             : 'none';
 
-    if(modo==='medir'){
+    if (modo === 'medir') {
 
-        specialPanel.style.display='block';
+        specialPanel.style.display =
+            'block';
 
-        specialHelp.textContent=
-            'Escribe la medida real del objeto de referencia.';
+        specialHelp.textContent =
+            'Escribe la medida real del objeto sólido conocido. Luego toma la foto.';
     }
 
-    if(modo==='plomado'){
+    if (modo === 'plomado') {
 
-        plomadoActivo=true;
-
-        plomadoOverlay.style.display='block';
-
-        dibujarTransportador();
+        activarPlomadoVisual();
     }
 }
 
 /* =========================================================
    GPS
-========================================================= */
+   ========================================================= */
 
-function obtenerGPS(){
+function obtenerGPS() {
 
-    return new Promise(resolve=>{
+    return new Promise(resolve => {
 
-        if(!navigator.geolocation){
+        if (!navigator.geolocation) {
             return resolve(null);
         }
 
         navigator.geolocation.getCurrentPosition(
+            p => resolve({
 
-            p=>resolve({
+                lat:
+                    p.coords.latitude,
 
-                lat:p.coords.latitude,
-                lng:p.coords.longitude,
-                accuracy:p.coords.accuracy
+                lng:
+                    p.coords.longitude,
 
+                accuracy:
+                    p.coords.accuracy
             }),
 
-            ()=>resolve(null),
+            () => resolve(null),
 
             {
-                enableHighAccuracy:true,
-                timeout:10000,
-                maximumAge:0
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
             }
         );
     });
 }
 
 /* =========================================================
-   CAPTURA VIDEO
-========================================================= */
+   CAPTURA BASE
+   ========================================================= */
 
-function capturaBase(){
+function capturaBase() {
 
-    const w=video.videoWidth;
-    const h=video.videoHeight;
+    const w =
+        video.videoWidth;
 
-    if(!w||!h){
+    const h =
+        video.videoHeight;
+
+    if (!w || !h) {
 
         throw new Error(
             'La cámara todavía no está lista.'
         );
     }
 
-    canvas.width=w;
-    canvas.height=h;
+    canvas.width =
+        w;
 
-    const ctx=
+    canvas.height =
+        h;
+
+    const ctx =
         canvas.getContext('2d');
 
     ctx.drawImage(
@@ -1970,126 +2204,203 @@ function capturaBase(){
 }
 
 /* =========================================================
-   FOTO
-========================================================= */
+   DIBUJAR PLOMADO SOBRE LA FOTO
+   =========================================================
 
-async function tomarFoto(){
+   Aquí está la corrección importante:
 
-    try{
+   El transportador que ves en pantalla también se
+   dibuja sobre la fotografía que se guarda.
 
-        if(!cameraStream){
+   No dependemos del canvas HTML visible.
+   Lo volvemos a dibujar directamente sobre la foto.
+   ========================================================= */
+
+function dibujarPlomadoEnFoto(
+    ctx,
+    w,
+    h
+) {
+
+    /*
+     * Para la foto usamos una versión proporcional
+     * al tamaño real de la fotografía.
+     */
+
+    const escala =
+        Math.min(
+            w / 900,
+            h / 1600
+        );
+
+    dibujarTransportadorEnContexto(
+        ctx,
+        w,
+        h,
+        plomadoGrados,
+        {
+            mostrarPendulo: true,
+            escala: clamp(
+                escala,
+                .55,
+                1.45
+            )
+        }
+    );
+
+    /*
+     * Caja pequeña de lectura dentro de la foto.
+     */
+
+    const font =
+        Math.max(
+            26,
+            Math.round(
+                Math.min(w, h) * .035
+            )
+        );
+
+    const texto =
+        `PLOMADO: ${Math.abs(plomadoGrados).toFixed(2)}°`;
+
+    const sentido =
+        Math.abs(plomadoGrados) < .005
+            ? 'CENTRADO'
+            : plomadoGrados > 0
+                ? 'DERECHA'
+                : 'IZQUIERDA';
+
+    ctx.save();
+
+    ctx.font =
+        `bold ${font}px Arial`;
+
+    const tw =
+        ctx.measureText(texto).width;
+
+    const pad =
+        Math.round(font * .55);
+
+    const x =
+        w / 2 -
+        (tw + pad * 2) / 2;
+
+    const y =
+        h * .43;
+
+    ctx.fillStyle =
+        'rgba(0,0,0,.72)';
+
+    ctx.beginPath();
+
+    ctx.roundRect(
+        x,
+        y,
+        tw + pad * 2,
+        font + pad * 1.5,
+        12
+    );
+
+    ctx.fill();
+
+    ctx.fillStyle =
+        '#fff';
+
+    ctx.textAlign =
+        'center';
+
+    ctx.textBaseline =
+        'middle';
+
+    ctx.fillText(
+        texto,
+        w / 2,
+        y +
+        (font + pad * 1.5) / 2
+    );
+
+    /*
+     * Dirección.
+     */
+
+    const dirTexto =
+        sentido;
+
+    const dirFont =
+        Math.max(
+            18,
+            Math.round(font * .55)
+        );
+
+    ctx.font =
+        `bold ${dirFont}px Arial`;
+
+    const dy =
+        y +
+        font +
+        pad * 1.5 +
+        dirFont +
+        12;
+
+    const dtw =
+        ctx.measureText(
+            dirTexto
+        ).width;
+
+    ctx.fillStyle =
+        'rgba(0,0,0,.65)';
+
+    ctx.fillRect(
+        w / 2 -
+        dtw / 2 -
+        10,
+        dy -
+        dirFont / 2 -
+        7,
+        dtw + 20,
+        dirFont + 14
+    );
+
+    ctx.fillStyle =
+        '#fff';
+
+    ctx.fillText(
+        dirTexto,
+        w / 2,
+        dy
+    );
+
+    ctx.restore();
+}
+
+/* =========================================================
+   TOMAR FOTO
+   ========================================================= */
+
+async function tomarFoto() {
+
+    try {
+
+        if (!cameraStream) {
 
             throw new Error(
                 'La cámara no está iniciada.'
             );
         }
 
-        gpsActual=
+        gpsActual =
             await obtenerGPS();
 
-        fechaFoto=
+        fechaFoto =
             new Date();
-
-        /*
-         * PLOMADO
-         */
-
-        if(modo==='plomado'){
-
-            /*
-             * Primero actualizamos la lectura.
-             */
-
-            plomadoGrados=
-                calcularAnguloPendulo();
-
-            /*
-             * Capturamos el video.
-             */
-
-            const ctx=
-                capturaBase();
-
-            /*
-             * IMPORTANTE:
-             * aquí se dibuja el transportador
-             * REAL sobre la fotografía.
-             */
-
-            dibujarTransportadorEnFoto(
-                ctx,
-                canvas.width,
-                canvas.height
-            );
-
-            /*
-             * Y después el estampado.
-             */
-
-            const grados=
-                Math.abs(plomadoGrados);
-
-            const direccion=
-                Math.abs(plomadoGrados)<.005
-                    ? 'CENTRADO'
-                    : plomadoGrados>0
-                        ? 'DERECHA'
-                        : 'IZQUIERDA';
-
-            dibujarEstampado(
-                ctx,
-                canvas.width,
-                canvas.height,
-                [
-                    `PLOMADO: ${grados.toFixed(2)}°`,
-                    `DIRECCIÓN: ${direccion}`
-                ]
-            );
-
-            fotoBase=
-                canvas.toDataURL(
-                    'image/jpeg',
-                    .92
-                );
-
-            /*
-             * Ocultamos la interfaz.
-             * La imagen ya contiene todo.
-             */
-
-            plomadoOverlay.style.display='none';
-
-            plomadoActivo=false;
-
-            enviarFotoFinal(
-                fotoBase,
-                {
-                    modo:'plomado',
-
-                    plomado:{
-                        grados:Number(
-                            grados.toFixed(2)
-                        ),
-
-                        direccion,
-
-                        anguloFirmado:Number(
-                            plomadoGrados.toFixed(2)
-                        )
-                    }
-                }
-            );
-
-            return;
-        }
 
         /*
          * NORMAL
          */
 
-        if(modo==='normal'){
+        if (modo === 'normal') {
 
-            const ctx=
+            const ctx =
                 capturaBase();
 
             dibujarEstampado(
@@ -2098,16 +2409,23 @@ async function tomarFoto(){
                 canvas.height
             );
 
-            fotoBase=
+            fotoBase =
                 canvas.toDataURL(
                     'image/jpeg',
                     .92
                 );
 
+            if (modoSenalar) {
+
+                abrirEditorFlecha();
+
+                return;
+            }
+
             enviarFotoFinal(
                 fotoBase,
                 {
-                    modo:'normal'
+                    modo: 'normal'
                 }
             );
 
@@ -2118,11 +2436,12 @@ async function tomarFoto(){
          * MEDIR
          */
 
-        if(modo==='medir'){
+        if (modo === 'medir') {
 
-            specialPanel.style.display='none';
+            specialPanel.style.display =
+                'none';
 
-            const ctx=
+            const ctx =
                 capturaBase();
 
             dibujarEstampado(
@@ -2131,103 +2450,1041 @@ async function tomarFoto(){
                 canvas.height
             );
 
-            fotoBase=
+            fotoBase =
                 canvas.toDataURL(
                     'image/jpeg',
                     .92
                 );
 
-            setStatus(
-                '📏 Foto capturada.'
-            );
-
-            enviarFotoFinal(
-                fotoBase,
-                {
-                    modo:'medir'
-                }
-            );
+            abrirEditorMedicion();
 
             return;
         }
 
-    }catch(e){
+        /*
+         * PLOMADO
+         */
+
+        if (modo === 'plomado') {
+
+            /*
+             * Capturamos la lectura justo al presionar FOTO.
+             */
+
+            plomadoGrados =
+                calcularAnguloPendulo();
+
+            setStatus(
+                `📐 Lectura capturada: ${Math.abs(plomadoGrados).toFixed(2)}°. Guardando foto…`
+            );
+
+            confirmarPlomado();
+
+            return;
+        }
+
+    } catch (e) {
 
         console.error(e);
 
         setStatus(
-            '❌ ERROR AL TOMAR FOTO\n'+
+            '❌ ERROR AL TOMAR FOTO\n' +
             e.message
         );
     }
 }
 
 /* =========================================================
-   MEDICION
-========================================================= */
+   EDITOR DE MEDICIÓN
+   ========================================================= */
 
-let referenceReal=null;
+let measureEditor = null;
+
+function abrirEditorMedicion() {
+
+    if (!measureEditor) {
+
+        measureEditor =
+            document.createElement('div');
+
+        measureEditor.style.cssText =
+            `
+            position:absolute;
+            inset:0;
+            z-index:25;
+            background:#000;
+            overflow:hidden;
+            touch-action:none;
+            `;
+    }
+
+    measureEditor.innerHTML = '';
+
+    const c =
+        document.createElement('canvas');
+
+    c.width =
+        canvas.width;
+
+    c.height =
+        canvas.height;
+
+    c.style.cssText =
+        `
+        position:absolute;
+        max-width:100%;
+        max-height:100%;
+        width:100%;
+        height:100%;
+        object-fit:contain;
+        left:0;
+        top:0;
+        `;
+
+    const ctx =
+        c.getContext('2d');
+
+    const im =
+        new Image();
+
+    im.onload = () => {
+
+        ctx.drawImage(
+            im,
+            0,
+            0,
+            c.width,
+            c.height
+        );
+
+        measureEditor.appendChild(c);
+
+        document
+            .getElementById('cameraContainer')
+            .appendChild(measureEditor);
+
+        setStatus(
+            '📏 En esta versión conserva el flujo de medición del poste.'
+        );
+    };
+
+    im.src =
+        fotoBase;
+}
+
+/* =========================================================
+   CONFIRMAR PLOMADO
+   ========================================================= */
+
+function confirmarPlomado() {
+
+    /*
+     * Primero ocultamos el overlay.
+     *
+     * Esto NO afecta la fotografía.
+     * La gráfica se dibuja nuevamente directamente
+     * sobre el canvas de la fotografía.
+     */
+
+    plomadoOverlay.style.display =
+        'none';
+
+    plomadoActivo =
+        false;
+
+    /*
+     * NUEVA captura limpia.
+     */
+
+    const ctx =
+        capturaBase();
+
+    /*
+     * PRIMERO:
+     * transportador + péndulo.
+     */
+
+    dibujarPlomadoEnFoto(
+        ctx,
+        canvas.width,
+        canvas.height
+    );
+
+    /*
+     * DESPUÉS:
+     * estampado UNA SOLA VEZ.
+     */
+
+    const grados =
+        Math.abs(
+            plomadoGrados
+        );
+
+    const direccion =
+        Math.abs(plomadoGrados) < .005
+            ? 'CENTRADO'
+            : plomadoGrados > 0
+                ? 'DERECHA'
+                : 'IZQUIERDA';
+
+    dibujarEstampado(
+        ctx,
+        canvas.width,
+        canvas.height,
+        [
+            `PLOMADO: ${grados.toFixed(2)}°`,
+            `DIRECCIÓN: ${direccion}`
+        ]
+    );
+
+    fotoBase =
+        canvas.toDataURL(
+            'image/jpeg',
+            .92
+        );
+
+    enviarFotoFinal(
+        fotoBase,
+        {
+            modo: 'plomado',
+
+            plomado: {
+
+                grados:
+                    Number(
+                        grados.toFixed(2)
+                    ),
+
+                direccion,
+
+                anguloFirmado:
+                    Number(
+                        plomadoGrados.toFixed(2)
+                    )
+            }
+        }
+    );
+}
+
+/* =========================================================
+   FLECHA
+   ========================================================= */
+
+let arrowEditor = null;
+let arrowCanvas = null;
+
+function abrirEditorFlecha() {
+
+    crearEditorFlechaDOM();
+
+    const im =
+        new Image();
+
+    im.onload = () => {
+
+        arrowCanvas.width =
+            im.naturalWidth;
+
+        arrowCanvas.height =
+            im.naturalHeight;
+
+        ajustarCanvasFlecha();
+
+        arrowEditor.style.display =
+            'block';
+
+        dibujarFlecha();
+
+        iniciarGestosFlecha();
+    };
+
+    im.src =
+        fotoBase;
+}
+
+function crearEditorFlechaDOM() {
+
+    if (arrowEditor) {
+        return;
+    }
+
+    arrowEditor =
+        document.createElement('div');
+
+    arrowEditor.id =
+        'arrowEditor';
+
+    arrowEditor.style.cssText =
+        `
+        position:absolute;
+        inset:0;
+        z-index:25;
+        background:#000;
+        touch-action:none;
+        overflow:hidden;
+        overscroll-behavior:none;
+        user-select:none;
+        -webkit-user-select:none;
+        -webkit-touch-callout:none;
+        `;
+
+    arrowCanvas =
+        document.createElement('canvas');
+
+    arrowCanvas.id =
+        'arrowCanvas';
+
+    arrowCanvas.style.cssText =
+        `
+        display:block;
+        position:absolute;
+        touch-action:none;
+        user-select:none;
+        -webkit-user-select:none;
+        -webkit-touch-callout:none;
+        margin:0;
+        padding:0;
+        `;
+
+    arrowEditor.appendChild(
+        arrowCanvas
+    );
+
+    document
+        .getElementById('cameraContainer')
+        .appendChild(
+            arrowEditor
+        );
+
+    signalButton.style.display =
+        'none';
+
+    takeButton.style.display =
+        'none';
+
+    confirmButton.style.display =
+        'inline-block';
+
+    cancelSignalButton.style.display =
+        'inline-block';
+
+    cancelButton.style.display =
+        'none';
+
+    setStatus(
+        '🎯 Toca la foto para colocar la flecha. Un dedo mueve; dos dedos giran/cambian tamaño.'
+    );
+
+    flechaX = null;
+    flechaY = null;
+    flechaAngulo = 0;
+    flechaEscala = 1;
+}
+
+function ajustarCanvasFlecha() {
+
+    if (
+        !arrowCanvas ||
+        !arrowCanvas.width ||
+        !arrowCanvas.height
+    ) {
+        return;
+    }
+
+    const container =
+        document.getElementById(
+            'cameraContainer'
+        );
+
+    const cw =
+        container.clientWidth;
+
+    const ch =
+        container.clientHeight;
+
+    const iw =
+        arrowCanvas.width;
+
+    const ih =
+        arrowCanvas.height;
+
+    const escala =
+        Math.min(
+            cw / iw,
+            ch / ih
+        );
+
+    const displayW =
+        iw * escala;
+
+    const displayH =
+        ih * escala;
+
+    arrowCanvas.style.width =
+        `${displayW}px`;
+
+    arrowCanvas.style.height =
+        `${displayH}px`;
+
+    arrowCanvas.style.left =
+        `${(cw - displayW) / 2}px`;
+
+    arrowCanvas.style.top =
+        `${(ch - displayH) / 2}px`;
+}
+
+function puntoArrow(e) {
+
+    const r =
+        arrowCanvas.getBoundingClientRect();
+
+    const p =
+        e.touches
+            ? e.touches[0]
+            : e;
+
+    return {
+
+        x:
+            (p.clientX - r.left) *
+            arrowCanvas.width /
+            r.width,
+
+        y:
+            (p.clientY - r.top) *
+            arrowCanvas.height /
+            r.height
+    };
+}
+
+function puntoRect(
+    x,
+    y,
+    r
+) {
+
+    return (
+        r &&
+        x >= r.x &&
+        x <= r.x + r.width &&
+        y >= r.y &&
+        y <= r.y + r.height
+    );
+}
+
+function arrowBlocked(
+    x,
+    y,
+    ang,
+    scale
+) {
+
+    const f =
+        Math.max(
+            arrowCanvas.width,
+            arrowCanvas.height
+        ) / 1200;
+
+    const len =
+        150 *
+        f *
+        scale;
+
+    const sx =
+        x -
+        len *
+        Math.cos(
+            ang +
+            Math.PI / 4
+        );
+
+    const sy =
+        y -
+        len *
+        Math.sin(
+            ang +
+            Math.PI / 4
+        );
+
+    for (
+        let i = 0;
+        i <= 18;
+        i++
+    ) {
+
+        const t =
+            i / 18;
+
+        const px =
+            sx +
+            (x - sx) *
+            t;
+
+        const py =
+            sy +
+            (y - sy) *
+            t;
+
+        if (
+            puntoRect(
+                px,
+                py,
+                zonaLogo
+            ) ||
+            puntoRect(
+                px,
+                py,
+                zonaEstampado
+            )
+        ) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function dibujarFlecha() {
+
+    if (!arrowCanvas) {
+        return;
+    }
+
+    const im =
+        new Image();
+
+    im.onload = () => {
+
+        const c =
+            arrowCanvas.getContext('2d');
+
+        c.clearRect(
+            0,
+            0,
+            arrowCanvas.width,
+            arrowCanvas.height
+        );
+
+        c.drawImage(
+            im,
+            0,
+            0,
+            arrowCanvas.width,
+            arrowCanvas.height
+        );
+
+        if (flechaX == null) {
+            return;
+        }
+
+        const f =
+            Math.max(
+                arrowCanvas.width,
+                arrowCanvas.height
+            ) / 1200;
+
+        const len =
+            150 *
+            f *
+            flechaEscala;
+
+        const tip =
+            32 *
+            f *
+            flechaEscala;
+
+        const sx =
+            flechaX -
+            len *
+            Math.cos(
+                flechaAngulo +
+                Math.PI / 4
+            );
+
+        const sy =
+            flechaY -
+            len *
+            Math.sin(
+                flechaAngulo +
+                Math.PI / 4
+            );
+
+        c.beginPath();
+
+        c.moveTo(
+            sx,
+            sy
+        );
+
+        c.lineTo(
+            flechaX,
+            flechaY
+        );
+
+        c.strokeStyle =
+            '#000';
+
+        c.lineWidth =
+            Math.max(
+                12,
+                13 *
+                f *
+                flechaEscala
+            );
+
+        c.lineCap =
+            'round';
+
+        c.stroke();
+
+        c.beginPath();
+
+        c.moveTo(
+            sx,
+            sy
+        );
+
+        c.lineTo(
+            flechaX,
+            flechaY
+        );
+
+        c.strokeStyle =
+            '#00ff00';
+
+        c.lineWidth =
+            Math.max(
+                7,
+                9 *
+                f *
+                flechaEscala
+            );
+
+        c.stroke();
+
+        const a =
+            Math.atan2(
+                flechaY - sy,
+                flechaX - sx
+            );
+
+        c.beginPath();
+
+        c.moveTo(
+            flechaX,
+            flechaY
+        );
+
+        c.lineTo(
+            flechaX -
+            tip *
+            Math.cos(
+                a - Math.PI / 6
+            ),
+            flechaY -
+            tip *
+            Math.sin(
+                a - Math.PI / 6
+            )
+        );
+
+        c.lineTo(
+            flechaX -
+            tip *
+            Math.cos(
+                a + Math.PI / 6
+            ),
+            flechaY -
+            tip *
+            Math.sin(
+                a + Math.PI / 6
+            )
+        );
+
+        c.closePath();
+
+        c.fillStyle =
+            '#00ff00';
+
+        c.fill();
+
+        c.strokeStyle =
+            '#000';
+
+        c.lineWidth =
+            Math.max(
+                3,
+                4 *
+                f *
+                flechaEscala
+            );
+
+        c.stroke();
+    };
+
+    im.src =
+        fotoBase;
+}
+
+/* =========================================================
+   GESTOS FLECHA
+   ========================================================= */
+
+function iniciarGestosFlecha() {
+
+    if (
+        !arrowCanvas ||
+        arrowCanvas.dataset.ready
+    ) {
+        return;
+    }
+
+    arrowCanvas.dataset.ready =
+        '1';
+
+    arrowCanvas.addEventListener(
+        'touchstart',
+        e => {
+
+            e.preventDefault();
+
+            if (
+                e.touches.length === 1
+            ) {
+
+                const p =
+                    puntoArrow(e);
+
+                if (
+                    flechaX == null
+                ) {
+
+                    if (
+                        arrowBlocked(
+                            p.x,
+                            p.y,
+                            0,
+                            1
+                        )
+                    ) {
+
+                        return alert(
+                            '🚫 La flecha no puede cubrir el logo ni el estampado.'
+                        );
+                    }
+
+                    flechaX =
+                        p.x;
+
+                    flechaY =
+                        p.y;
+
+                    dibujarFlecha();
+                }
+
+                gestoActivo =
+                    true;
+
+                toqueInicial = {
+                    tipo: 'move',
+                    x: p.x,
+                    y: p.y,
+                    x0: flechaX,
+                    y0: flechaY
+                };
+
+            } else if (
+                e.touches.length === 2 &&
+                flechaX != null
+            ) {
+
+                const a =
+                    puntoArrow(
+                        e.touches[0]
+                    );
+
+                const b =
+                    puntoArrow(
+                        e.touches[1]
+                    );
+
+                toqueInicial = {
+
+                    tipo: 'transform',
+
+                    dist:
+                        Math.hypot(
+                            b.x - a.x,
+                            b.y - a.y
+                        ),
+
+                    ang:
+                        Math.atan2(
+                            b.y - a.y,
+                            b.x - a.x
+                        ),
+
+                    x0:
+                        flechaX,
+
+                    y0:
+                        flechaY,
+
+                    s:
+                        flechaEscala,
+
+                    r:
+                        flechaAngulo
+                };
+
+                gestoActivo =
+                    true;
+            }
+        },
+        {
+            passive: false
+        }
+    );
+
+    arrowCanvas.addEventListener(
+        'touchmove',
+        e => {
+
+            e.preventDefault();
+
+            if (!gestoActivo) {
+                return;
+            }
+
+            if (
+                e.touches.length === 1 &&
+                toqueInicial?.tipo === 'move'
+            ) {
+
+                const p =
+                    puntoArrow(e);
+
+                const nx =
+                    toqueInicial.x0 +
+                    p.x -
+                    toqueInicial.x;
+
+                const ny =
+                    toqueInicial.y0 +
+                    p.y -
+                    toqueInicial.y;
+
+                if (
+                    !arrowBlocked(
+                        nx,
+                        ny,
+                        flechaAngulo,
+                        flechaEscala
+                    )
+                ) {
+
+                    flechaX =
+                        nx;
+
+                    flechaY =
+                        ny;
+
+                    dibujarFlecha();
+                }
+
+            } else if (
+                e.touches.length === 2 &&
+                toqueInicial?.tipo === 'transform'
+            ) {
+
+                const a =
+                    puntoArrow(
+                        e.touches[0]
+                    );
+
+                const b =
+                    puntoArrow(
+                        e.touches[1]
+                    );
+
+                const dist =
+                    Math.hypot(
+                        b.x - a.x,
+                        b.y - a.y
+                    );
+
+                const ang =
+                    Math.atan2(
+                        b.y - a.y,
+                        b.x - a.x
+                    );
+
+                const s =
+                    clamp(
+                        toqueInicial.s *
+                        dist /
+                        toqueInicial.dist,
+                        .35,
+                        3
+                    );
+
+                const r =
+                    toqueInicial.r +
+                    ang -
+                    toqueInicial.ang;
+
+                if (
+                    !arrowBlocked(
+                        toqueInicial.x0,
+                        toqueInicial.y0,
+                        r,
+                        s
+                    )
+                ) {
+
+                    flechaEscala =
+                        s;
+
+                    flechaAngulo =
+                        r;
+
+                    dibujarFlecha();
+                }
+            }
+        },
+        {
+            passive: false
+        }
+    );
+
+    arrowCanvas.addEventListener(
+        'touchend',
+        e => {
+
+            if (!e.touches.length) {
+
+                gestoActivo =
+                    false;
+
+                toqueInicial =
+                    null;
+            }
+        },
+        {
+            passive: false
+        }
+    );
+}
+
+/* =========================================================
+   CERRAR FLECHA
+   ========================================================= */
+
+function cerrarEditorFlecha() {
+
+    if (arrowEditor) {
+
+        arrowEditor.remove();
+
+        arrowEditor =
+            null;
+
+        arrowCanvas =
+            null;
+    }
+
+    confirmButton.style.display =
+        'none';
+
+    cancelSignalButton.style.display =
+        'none';
+
+    takeButton.style.display =
+        'inline-block';
+
+    cancelButton.style.display =
+        'inline-block';
+
+    signalButton.style.display =
+        'inline-block';
+}
+
+/* =========================================================
+   MEDIDA REAL
+   ========================================================= */
 
 measureStart.addEventListener(
     'click',
-    ()=>{
+    () => {
 
-        const v=
+        const v =
             Number(
                 knownMeasure.value
             );
 
-        if(
-            !Number.isFinite(v)||
-            v<=0
-        ){
+        if (
+            !Number.isFinite(v) ||
+            v <= 0
+        ) {
 
             return alert(
                 'Captura una medida real mayor que cero.'
             );
         }
 
-        referenceReal=v;
+        referenceReal =
+            v;
 
-        specialPanel.style.display='none';
+        specialPanel.style.display =
+            'none';
 
         setStatus(
-            'Medida guardada: '+
-            v+
+            'Medida guardada: ' +
+            v +
             ' m. Ahora toma la fotografía.'
         );
 
-        takeButton.disabled=false;
+        takeButton.disabled =
+            false;
     }
 );
 
 /* =========================================================
-   ENVIO
-========================================================= */
+   ENVÍO
+   ========================================================= */
 
 function enviarFotoFinal(
     dataURL,
-    extra={}
-){
+    extra = {}
+) {
 
-    preview.src=dataURL;
+    preview.src =
+        dataURL;
 
-    preview.style.display='block';
+    preview.style.display =
+        'block';
 
-    const mensaje={
+    const mensaje = {
 
-        type:'CAMERA_STAMP_PHOTO',
+        type:
+            'CAMERA_STAMP_PHOTO',
 
-        tipo:String(tipo||'').trim(),
+        tipo:
+            String(tipo || '')
+                .trim(),
 
-        fileName:crearNombreFoto(
-            tipo,
-            fechaFoto||new Date()
-        ),
+        fileName:
+            crearNombreFoto(
+                tipo,
+                fechaFoto ||
+                new Date()
+            ),
 
-        mimeType:'image/jpeg',
+        mimeType:
+            'image/jpeg',
 
-        data:dataURL,
+        data:
+            dataURL,
 
         latitud:
             gpsActual
@@ -2241,7 +3498,7 @@ function enviarFotoFinal(
 
         modo,
 
-        metadata:{
+        metadata: {
 
             proyecto,
 
@@ -2251,79 +3508,90 @@ function enviarFotoFinal(
 
             rama,
 
-            tipoFoto:nombreTipo(tipo),
+            tipoFoto:
+                nombreTipo(tipo),
 
-            fecha:(
-                fechaFoto||
-                new Date()
-            ).toISOString(),
+            fecha:
+                (
+                    fechaFoto ||
+                    new Date()
+                ).toISOString(),
 
-            gps:gpsActual
+            gps:
+                gpsActual
         },
 
         ...extra
     };
 
-    let confirmado=false;
+    let confirmado =
+        false;
 
-    const cerrarTrasAck=e=>{
+    const cerrarTrasAck =
+        e => {
 
-        if(
-            !e||
-            !e.data||
-            e.data.type!=='CAMERA_STAMP_ACK'
-        ){
-            return;
-        }
+            if (
+                !e ||
+                !e.data ||
+                e.data.type !==
+                'CAMERA_STAMP_ACK'
+            ) {
+                return;
+            }
 
-        if(
-            e.data.fileName&&
-            e.data.fileName!==mensaje.fileName
-        ){
-            return;
-        }
+            if (
+                e.data.fileName &&
+                e.data.fileName !==
+                mensaje.fileName
+            ) {
+                return;
+            }
 
-        confirmado=true;
+            confirmado =
+                true;
 
-        window.removeEventListener(
-            'message',
-            cerrarTrasAck
-        );
+            window.removeEventListener(
+                'message',
+                cerrarTrasAck
+            );
 
-        setStatus(
-            '✅ FOTO RECIBIDA POR EL FORMULARIO.'
-        );
+            setStatus(
+                '✅ FOTO RECIBIDA POR EL FORMULARIO.'
+            );
 
-        detenerCamara();
+            detenerCamara();
 
-        setTimeout(
-            ()=>{
-                try{
+            setTimeout(
+                () => {
 
-                    if(
-                        window.opener&&
-                        !window.opener.closed
-                    ){
-                        window.opener.focus();
-                    }
+                    try {
 
-                    window.close();
+                        if (
+                            window.opener &&
+                            !window.opener.closed
+                        ) {
 
-                }catch(_){}
-            },
-            150
-        );
-    };
+                            window.opener.focus();
+                        }
+
+                        window.close();
+
+                    } catch (_) {}
+
+                },
+                150
+            );
+        };
 
     window.addEventListener(
         'message',
         cerrarTrasAck
     );
 
-    if(
-        window.opener&&
+    if (
+        window.opener &&
         !window.opener.closed
-    ){
+    ) {
 
         window.opener.postMessage(
             mensaje,
@@ -2334,7 +3602,7 @@ function enviarFotoFinal(
             '📤 Enviando fotografía al formulario…'
         );
 
-    }else{
+    } else {
 
         window.removeEventListener(
             'message',
@@ -2349,9 +3617,9 @@ function enviarFotoFinal(
     }
 
     setTimeout(
-        ()=>{
+        () => {
 
-            if(confirmado){
+            if (confirmado) {
                 return;
             }
 
@@ -2366,83 +3634,91 @@ function enviarFotoFinal(
 
             detenerCamara();
 
-            try{
+            try {
 
-                if(
-                    window.opener&&
+                if (
+                    window.opener &&
                     !window.opener.closed
-                ){
+                ) {
+
                     window.opener.focus();
                 }
 
                 window.close();
 
-            }catch(_){}
+            } catch (_) {}
+
         },
         2500
     );
 }
 
 /* =========================================================
-   DETENER
-========================================================= */
+   DETENER CÁMARA
+   ========================================================= */
 
-function detenerCamara(){
+function detenerCamara() {
 
-    if(cameraStream){
+    if (cameraStream) {
 
         cameraStream
             .getTracks()
             .forEach(
-                t=>t.stop()
+                t => t.stop()
             );
 
-        cameraStream=null;
+        cameraStream =
+            null;
     }
 
-    video.srcObject=null;
+    video.srcObject =
+        null;
 
-    takeButton.disabled=true;
+    takeButton.disabled =
+        true;
 
-    if(motionHandler){
+    if (motionHandler) {
 
         window.removeEventListener(
             'devicemotion',
             motionHandler
         );
 
-        motionHandler=null;
+        motionHandler =
+            null;
     }
 
-    if(orientationHandler){
+    if (orientationHandler) {
 
         window.removeEventListener(
             'deviceorientation',
             orientationHandler
         );
 
-        orientationHandler=null;
+        orientationHandler =
+            null;
     }
 }
 
 /* =========================================================
    SEÑALAR
-========================================================= */
+   ========================================================= */
 
 signalButton.addEventListener(
     'click',
-    ()=>{
+    () => {
 
-        modoSenalar=!modoSenalar;
+        modoSenalar =
+            !modoSenalar;
 
-        signalButton.textContent=
+        signalButton.textContent =
             modoSenalar
                 ? '🎯 ACTIVO'
                 : '🎯 SEÑALAR';
 
         setStatus(
             modoSenalar
-                ? '🎯 SEÑALAR ACTIVADO.'
+                ? '🎯 SEÑALAR ACTIVADO. Toma la fotografía.'
                 : 'Señalar desactivado.'
         );
     }
@@ -2450,7 +3726,7 @@ signalButton.addEventListener(
 
 /* =========================================================
    FOTO
-========================================================= */
+   ========================================================= */
 
 takeButton.addEventListener(
     'click',
@@ -2459,85 +3735,158 @@ takeButton.addEventListener(
 
 /* =========================================================
    SALIR
-========================================================= */
+   ========================================================= */
 
 cancelButton.addEventListener(
     'click',
-    ()=>{
+    () => {
 
         detenerCamara();
 
-        if(
-            window.opener&&
+        if (
+            window.opener &&
             !window.opener.closed
-        ){
+        ) {
+
             window.close();
         }
     }
 );
 
 /* =========================================================
-   RESIZE / ORIENTACION
-========================================================= */
+   CONFIRMAR FLECHA
+   ========================================================= */
 
-function actualizarInterfazOrientacion(){
+confirmButton.addEventListener(
+    'click',
+    () => {
 
-    if(modo==='plomado'){
+        if (flechaX == null) {
 
-        /*
-         * Esperamos un frame para que el navegador
-         * termine de cambiar las dimensiones.
-         */
+            return alert(
+                'Primero toca la imagen para colocar la flecha.'
+            );
+        }
 
-        requestAnimationFrame(()=>{
-            dibujarTransportador();
-        });
-    }
-}
+        const data =
+            arrowCanvas.toDataURL(
+                'image/jpeg',
+                .92
+            );
 
-window.addEventListener(
-    'resize',
-    actualizarInterfazOrientacion
-);
+        cerrarEditorFlecha();
 
-window.addEventListener(
-    'orientationchange',
-    ()=>{
-        setTimeout(
-            actualizarInterfazOrientacion,
-            150
+        enviarFotoFinal(
+            data,
+            {
+                modo: 'normal',
+
+                metadata: {
+
+                    flecha: {
+
+                        x:
+                            flechaX,
+
+                        y:
+                            flechaY,
+
+                        angulo:
+                            flechaAngulo,
+
+                        escala:
+                            flechaEscala
+                    }
+                }
+            }
         );
     }
 );
 
 /* =========================================================
+   CANCELAR FLECHA
+   ========================================================= */
+
+cancelSignalButton.addEventListener(
+    'click',
+    () => {
+
+        cerrarEditorFlecha();
+
+        fotoBase =
+            null;
+
+        setStatus(
+            'Se canceló el señalamiento. Puedes tomar otra fotografía.'
+        );
+    }
+);
+
+/* =========================================================
+   RESIZE
+   ========================================================= */
+
+window.addEventListener(
+    'resize',
+    () => {
+
+        if (
+            arrowEditor &&
+            arrowCanvas
+        ) {
+
+            ajustarCanvasFlecha();
+        }
+
+        if (
+            modo === 'plomado'
+        ) {
+
+            setTimeout(
+                () => {
+
+                    actualizarPlomado();
+                    dibujarTransportador();
+
+                },
+                50
+            );
+        }
+    }
+);
+
+/* =========================================================
    INICIO
-========================================================= */
+   ========================================================= */
 
 window.addEventListener(
     'load',
-    async()=>{
+    async () => {
 
-        modeBadge.textContent=
-            modo==='medir'
+        modeBadge.textContent =
+            modo === 'medir'
                 ? '📏 MEDIR POSTE'
-                : modo==='plomado'
+                : modo === 'plomado'
                     ? '📐 PLOMADO POSTE'
-                    : '📷 '+nombreTipo(tipo);
+                    : '📷 ' +
+                      nombreTipo(tipo);
 
-        if(modo==='medir'){
+        if (modo === 'medir') {
 
-            specialPanel.style.display='block';
+            specialPanel.style.display =
+                'block';
 
-            specialHelp.textContent=
-                'Captura la medida real del objeto conocido.';
+            specialHelp.textContent =
+                'Captura la medida real del objeto conocido. La referencia y el poste deben estar aproximadamente a la misma distancia/plano para reducir error de perspectiva.';
         }
 
-        if(modo==='plomado'){
+        if (modo === 'plomado') {
 
-            plomadoOverlay.style.display='block';
+            plomadoOverlay.style.display =
+                'block';
 
-            plomadoActivo=true;
+            plomadoActivo =
+                true;
 
             dibujarTransportador();
         }
