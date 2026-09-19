@@ -51,9 +51,9 @@
             display: none;
         }
 
-        /* =========================
+        /* =====================================================
            HUD
-        ========================= */
+        ===================================================== */
 
         #hud {
             position: absolute;
@@ -67,7 +67,7 @@
 
         #modeBadge {
             display: inline-block;
-            background: rgba(0, 0, 0, .7);
+            background: rgba(0, 0, 0, .72);
             padding: 8px 10px;
             border-radius: 8px;
             font-weight: bold;
@@ -77,35 +77,37 @@
         #sensorHud {
             margin-top: 6px;
             display: inline-block;
-            background: rgba(0, 0, 0, .62);
+            background: rgba(0, 0, 0, .68);
             padding: 7px 10px;
             border-radius: 8px;
             font-size: 12px;
         }
 
-        /*
-         * GUÍA DEL SENSOR EN PANTALLA
-         * CIAN para diferenciarla de la línea BASE-PUNTA.
-         */
+        /* =====================================================
+           PÉNDULO EN VIVO
+        ===================================================== */
 
-        #verticalGuide {
+        #pendulumHud {
             position: absolute;
-            z-index: 18;
+            z-index: 19;
             left: 50%;
-            top: 18%;
-            height: 64%;
-            border-left: 3px dashed rgba(0, 229, 255, .95);
-            transform-origin: center;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: min(82vw, 430px);
+            height: min(72vh, 560px);
             pointer-events: none;
             display: none;
-            filter:
-                drop-shadow(0 0 2px #000)
-                drop-shadow(0 0 3px #000);
         }
 
-        /* =========================
+        #pendulumCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* =====================================================
            CONTROLES
-        ========================= */
+        ===================================================== */
 
         #controls {
             position: absolute;
@@ -142,11 +144,6 @@
             opacity: .45;
         }
 
-        #startButton {
-            background: #2196f3;
-            color: #fff;
-        }
-
         #takeButton {
             background: #4caf50;
             color: #fff;
@@ -174,9 +171,9 @@
             color: #fff;
         }
 
-        /* =========================
+        /* =====================================================
            PANEL MEDICIÓN
-        ========================= */
+        ===================================================== */
 
         #specialPanel {
             position: absolute;
@@ -221,9 +218,10 @@
             width: 100%;
         }
 
-        /* =========================
+        /* =====================================================
            EDITOR DE PUNTOS
-        ========================= */
+           SOLO SE UTILIZA EN MEDIR
+        ===================================================== */
 
         #pointEditor {
             position: absolute;
@@ -276,9 +274,9 @@
             color: #fff;
         }
 
-        /* =========================
+        /* =====================================================
            STATUS
-        ========================= */
+        ===================================================== */
 
         #status {
             position: absolute;
@@ -301,9 +299,9 @@
             margin: auto;
         }
 
-        /* =========================
+        /* =====================================================
            RESPONSIVE
-        ========================= */
+        ===================================================== */
 
         @media (max-width: 420px) {
 
@@ -348,11 +346,19 @@
 
         </div>
 
-        <div id="verticalGuide"></div>
+        <!-- =====================================================
+             PÉNDULO
+        ====================================================== -->
 
-        <!-- =========================
+        <div id="pendulumHud">
+
+            <canvas id="pendulumCanvas"></canvas>
+
+        </div>
+
+        <!-- =====================================================
              PANEL MEDICIÓN
-        ========================= -->
+        ====================================================== -->
 
         <div id="specialPanel">
 
@@ -376,9 +382,10 @@
 
         </div>
 
-        <!-- =========================
+        <!-- =====================================================
              EDITOR DE PUNTOS
-        ========================= -->
+             SOLO PARA MEDIR POSTE
+        ====================================================== -->
 
         <div id="pointEditor">
 
@@ -410,9 +417,9 @@
             Abriendo cámara…
         </div>
 
-        <!-- =========================
-             CONTROLES PRINCIPALES
-        ========================= -->
+        <!-- =====================================================
+             CONTROLES
+        ====================================================== -->
 
         <div id="controls">
 
@@ -445,9 +452,9 @@
     <script>
         'use strict';
 
-        /* =========================================================
+        /* =====================================================
            PARÁMETROS
-        ========================================================= */
+        ===================================================== */
 
         const params =
             new URLSearchParams(location.search);
@@ -484,29 +491,9 @@
         const rama =
             params.get('rama') || '';
 
-        /* =========================================================
-           COLORES DE ANOTACIONES
-        ========================================================= */
-
-        /*
-         * Línea de sensores:
-         * CIAN.
-         */
-
-        const SENSOR_LINE_COLOR =
-            '#00e5ff';
-
-        /*
-         * Línea BASE-PUNTA:
-         * AMARILLO.
-         */
-
-        const POST_LINE_COLOR =
-            '#ffd400';
-
-        /* =========================================================
+        /* =====================================================
            LOGO
-        ========================================================= */
+        ===================================================== */
 
         const LOGO_DRIVE_ID =
             '12EpwDn_A9mR0DfZSiGoTi2NS9zFNYPVP';
@@ -519,9 +506,9 @@
             'https://drive.google.com/uc?export=view&id=' +
             LOGO_DRIVE_ID;
 
-        /* =========================================================
+        /* =====================================================
            DOM
-        ========================================================= */
+        ===================================================== */
 
         const video =
             document.getElementById('video');
@@ -559,8 +546,11 @@
         const sensorHud =
             document.getElementById('sensorHud');
 
-        const verticalGuide =
-            document.getElementById('verticalGuide');
+        const pendulumHud =
+            document.getElementById('pendulumHud');
+
+        const pendulumCanvas =
+            document.getElementById('pendulumCanvas');
 
         const specialPanel =
             document.getElementById('specialPanel');
@@ -592,9 +582,9 @@
         const pointCancel =
             document.getElementById('pointCancel');
 
-        /* =========================================================
+        /* =====================================================
            ESTADO
-        ========================================================= */
+        ===================================================== */
 
         let cameraStream = null;
 
@@ -614,22 +604,27 @@
 
         let fotoBase = null;
 
+        /* =====================================================
+           FLECHA
+        ===================================================== */
+
         let flechaX = null;
-
         let flechaY = null;
-
         let flechaAngulo = 0;
-
         let flechaEscala = 1;
 
         let gestoActivo = false;
-
         let toqueInicial = null;
-
         let ultimoToque = 0;
 
-        let motionHandler = null;
+        let arrowEditor = null;
+        let arrowCanvas = null;
 
+        /* =====================================================
+           SENSORES
+        ===================================================== */
+
+        let motionHandler = null;
         let orientationHandler = null;
 
         let gravity = {
@@ -642,7 +637,19 @@
 
         let orientationAngle = 0;
 
-        let specialStage = null;
+        /*
+         * Ángulo que se mostrará y que se estampará.
+         *
+         * Es el ángulo instantáneo que está mostrando
+         * el péndulo.
+         */
+        let pendulumAngle = 0;
+
+        let pendulumAngleAtCapture = 0;
+
+        /* =====================================================
+           MEDICIÓN
+        ===================================================== */
 
         let referenceReal = null;
 
@@ -652,11 +659,18 @@
 
         let specialResult = null;
 
-        /* =========================================================
-           FUNCIONES GENERALES
-        ========================================================= */
+        let moverPuntosActivo = false;
+
+        let puntoSeleccionado = -1;
+
+        let puntoArrastrando = false;
+
+        /* =====================================================
+           GENERALES
+        ===================================================== */
 
         function setStatus(text) {
+
             status.textContent = text;
         }
 
@@ -708,9 +722,9 @@
             );
         }
 
-        /* =========================================================
+        /* =====================================================
            LOGO
-        ========================================================= */
+        ===================================================== */
 
         function cargarLogo() {
 
@@ -735,6 +749,7 @@
                 im.onload = () => {
 
                     logoImagen = im;
+
                     logoListo = true;
                 };
 
@@ -823,9 +838,9 @@
             ctx.restore();
         }
 
-        /* =========================================================
+        /* =====================================================
            ESTAMPADO
-        ========================================================= */
+        ===================================================== */
 
         function dibujarEstampado(
             ctx,
@@ -937,9 +952,9 @@
             );
         }
 
-        /* =========================================================
+        /* =====================================================
            SENSORES
-        ========================================================= */
+        ===================================================== */
 
         async function iniciarSensores() {
 
@@ -985,7 +1000,7 @@
 
                         gravityReady = true;
 
-                        actualizarGuia();
+                        actualizarPendulo();
                     }
                 };
 
@@ -1031,7 +1046,7 @@
                                 ? screen.orientation.angle
                                 : 0;
 
-                        actualizarGuia();
+                        actualizarPendulo();
                     }
                 };
 
@@ -1046,6 +1061,8 @@
                 sensorHud.textContent =
                     'Sensores: ACTIVOS';
 
+                actualizarPendulo();
+
             } catch (e) {
 
                 sensorHud.textContent =
@@ -1055,9 +1072,14 @@
             }
         }
 
+        /* =====================================================
+           GRAVEDAD SEGÚN ORIENTACIÓN DE PANTALLA
+        ===================================================== */
+
         function screenGravity() {
 
             let x = gravity.x;
+
             let y = gravity.y;
 
             const a =
@@ -1073,11 +1095,13 @@
                 const q = x;
 
                 x = y;
+
                 y = -q;
 
             } else if (a === 180) {
 
                 x = -x;
+
                 y = -y;
 
             } else if (a === 270) {
@@ -1085,6 +1109,7 @@
                 const q = x;
 
                 x = -y;
+
                 y = q;
             }
 
@@ -1094,189 +1119,623 @@
             };
         }
 
-        function obtenerAnguloSensor() {
+        /* =====================================================
+           CÁLCULO DEL ÁNGULO DEL PÉNDULO
+        ===================================================== */
+
+        function calcularAnguloPendulo() {
 
             const g =
                 screenGravity();
 
-            return (
+            if (
+                !Number.isFinite(g.x) ||
+                !Number.isFinite(g.y)
+            ) {
+                return 0;
+            }
+
+            /*
+             * La referencia vertical es 0°.
+             *
+             * El signo conserva hacia qué lado
+             * está inclinado el teléfono.
+             */
+
+            let ang =
                 Math.atan2(
                     g.x,
                     -g.y
-                )
-            );
-        }
-
-        function actualizarGuia() {
-
-            if (modo !== 'plomado') {
-                return;
-            }
-
-            const ang =
-                obtenerAnguloSensor() *
+                ) *
                 180 /
                 Math.PI;
 
-            verticalGuide.style.display =
-                'block';
+            /*
+             * Normalizamos para que el indicador
+             * trabaje en -90° a +90°.
+             */
 
-            verticalGuide.style.transform =
-                `translateX(-50%) rotate(${ang}deg)`;
-
-            sensorHud.textContent =
-                gravityReady
-                    ? `Sensores: ACTIVOS | vertical ${ang.toFixed(1)}°`
-                    : 'Sensores: esperando…';
-        }
-
-        /* =========================================================
-           DIBUJAR LÍNEA DEL SENSOR SOBRE LA FOTO
-           
-           ESTA ES LA CORRECCIÓN PRINCIPAL.
-           
-           La guía que vemos en pantalla ahora también se
-           dibuja directamente en el canvas, por lo que queda
-           guardada en la fotografía.
-        ========================================================= */
-
-        function dibujarGuiaSensorEnCanvas(
-            ctx,
-            w,
-            h
-        ) {
-
-            if (
-                modo !== 'plomado' ||
-                !gravityReady
-            ) {
-                return;
+            if (ang > 90) {
+                ang -= 180;
             }
 
-            const ang =
-                obtenerAnguloSensor();
+            if (ang < -90) {
+                ang += 180;
+            }
+
+            return ang;
+        }
+
+        /* =====================================================
+           PÉNDULO
+        ===================================================== */
+
+        function actualizarPendulo() {
+
+            pendulumAngle =
+                calcularAnguloPendulo();
+
+            if (modo === 'plomado') {
+
+                sensorHud.textContent =
+                    gravityReady
+                        ? `PÉNDULO: ${Math.abs(pendulumAngle).toFixed(2)}°`
+                        : 'Péndulo: esperando…';
+
+                pendulumHud.style.display =
+                    'block';
+
+                dibujarPenduloLive();
+            }
+        }
+
+        function prepararCanvasPendulo() {
+
+            const rect =
+                pendulumCanvas.getBoundingClientRect();
+
+            const dpr =
+                window.devicePixelRatio || 1;
+
+            const w =
+                Math.max(
+                    1,
+                    Math.round(rect.width * dpr)
+                );
+
+            const h =
+                Math.max(
+                    1,
+                    Math.round(rect.height * dpr)
+                );
+
+            if (
+                pendulumCanvas.width !== w ||
+                pendulumCanvas.height !== h
+            ) {
+
+                pendulumCanvas.width = w;
+
+                pendulumCanvas.height = h;
+            }
+        }
+
+        function dibujarPenduloLive() {
+
+            prepararCanvasPendulo();
+
+            const c =
+                pendulumCanvas.getContext('2d');
+
+            const w =
+                pendulumCanvas.width;
+
+            const h =
+                pendulumCanvas.height;
+
+            c.clearRect(
+                0,
+                0,
+                w,
+                h
+            );
+
+            dibujarGraficoPendulo(
+                c,
+                w,
+                h,
+                pendulumAngle,
+                true
+            );
+        }
+
+        /*
+         * Este mismo gráfico se utiliza:
+         *
+         * 1. En vivo sobre la cámara.
+         * 2. En la fotografía final.
+         *
+         * De esta manera los grados estampados son
+         * exactamente los grados que estaba mostrando
+         * el péndulo al capturar.
+         */
+
+        function dibujarGraficoPendulo(
+            c,
+            w,
+            h,
+            angulo,
+            live = false
+        ) {
 
             const cx =
                 w / 2;
 
             const cy =
-                h / 2;
+                h * .43;
+
+            const radius =
+                Math.min(w, h) *
+                .34;
+
+            c.save();
 
             /*
-             * La guía HTML es una línea vertical rotada.
-             * Aquí hacemos exactamente lo mismo:
-             *
-             * vector vertical:
-             * x = 0
-             * y = -1
-             *
-             * después aplicamos el ángulo.
+             * Panel semitransparente
              */
 
-            const dx =
-                Math.sin(ang);
+            c.fillStyle =
+                live
+                    ? 'rgba(0,0,0,.38)'
+                    : 'rgba(0,0,0,.58)';
 
-            const dy =
-                -Math.cos(ang);
+            c.beginPath();
+
+            c.roundRect(
+                cx - radius * 1.05,
+                cy - radius * 1.05,
+                radius * 2.1,
+                radius * 2.25,
+                radius * .12
+            );
+
+            c.fill();
 
             /*
-             * Longitud suficientemente grande para
-             * atravesar toda la fotografía.
+             * Título
              */
 
-            const longitud =
-                Math.sqrt(
-                    w * w +
-                    h * h
-                ) * 1.5;
+            c.textAlign =
+                'center';
 
-            const x1 =
-                cx -
-                dx * longitud;
+            c.textBaseline =
+                'middle';
 
-            const y1 =
-                cy -
-                dy * longitud;
+            c.font =
+                `bold ${Math.max(18, radius * .15)}px Arial`;
 
-            const x2 =
-                cx +
-                dx * longitud;
+            c.fillStyle =
+                '#ffffff';
 
-            const y2 =
-                cy +
-                dy * longitud;
+            c.fillText(
+                'PLOMADO',
+                cx,
+                cy - radius * .83
+            );
 
-            ctx.save();
+            /*
+             * ESCALA
+             *
+             * Marcas:
+             * -10 -5 -3 -2 -1 0 1 2 3 5 10
+             */
 
-            ctx.lineCap =
-                'butt';
+            const marcas = [
+                -10,
+                -5,
+                -3,
+                -2,
+                -1,
+                0,
+                1,
+                2,
+                3,
+                5,
+                10
+            ];
 
-            ctx.setLineDash([
-                Math.max(18, w / 55),
-                Math.max(12, w / 90)
+            const escalaMax =
+                10;
+
+            /*
+             * Arco superior.
+             */
+
+            const arcoR =
+                radius * .67;
+
+            c.lineWidth =
+                Math.max(
+                    3,
+                    radius * .018
+                );
+
+            c.strokeStyle =
+                'rgba(255,255,255,.8)';
+
+            c.beginPath();
+
+            c.arc(
+                cx,
+                cy,
+                arcoR,
+                Math.PI,
+                Math.PI * 2
+            );
+
+            c.stroke();
+
+            /*
+             * Marcas de grados.
+             */
+
+            marcas.forEach(g => {
+
+                const rad =
+                    Math.PI +
+                    (
+                        (g + escalaMax) /
+                        (escalaMax * 2)
+                    ) *
+                    Math.PI;
+
+                const x1 =
+                    cx +
+                    Math.cos(rad) *
+                    arcoR;
+
+                const y1 =
+                    cy +
+                    Math.sin(rad) *
+                    arcoR;
+
+                const largo =
+                    g === 0
+                        ? radius * .13
+                        : radius * .075;
+
+                const x2 =
+                    cx +
+                    Math.cos(rad) *
+                    (arcoR - largo);
+
+                const y2 =
+                    cy +
+                    Math.sin(rad) *
+                    (arcoR - largo);
+
+                c.beginPath();
+
+                c.moveTo(
+                    x1,
+                    y1
+                );
+
+                c.lineTo(
+                    x2,
+                    y2
+                );
+
+                c.lineWidth =
+                    g === 0
+                        ? Math.max(
+                            5,
+                            radius * .025
+                        )
+                        : Math.max(
+                            2,
+                            radius * .014
+                        );
+
+                c.strokeStyle =
+                    g === 0
+                        ? '#00ffff'
+                        : 'rgba(255,255,255,.8)';
+
+                c.stroke();
+
+                /*
+                 * Número
+                 */
+
+                c.font =
+                    `bold ${Math.max(11, radius * .075)}px Arial`;
+
+                c.fillStyle =
+                    g === 0
+                        ? '#00ffff'
+                        : '#ffffff';
+
+                const tx =
+                    cx +
+                    Math.cos(rad) *
+                    (arcoR - radius * .18);
+
+                const ty =
+                    cy +
+                    Math.sin(rad) *
+                    (arcoR - radius * .18);
+
+                c.fillText(
+                    `${Math.abs(g)}°`,
+                    tx,
+                    ty
+                );
+            });
+
+            /*
+             * Línea vertical de referencia.
+             */
+
+            c.beginPath();
+
+            c.moveTo(
+                cx,
+                cy - radius * .65
+            );
+
+            c.lineTo(
+                cx,
+                cy + radius * .82
+            );
+
+            c.lineWidth =
+                Math.max(
+                    3,
+                    radius * .018
+                );
+
+            c.strokeStyle =
+                '#00ffff';
+
+            c.setLineDash([
+                radius * .045,
+                radius * .035
             ]);
 
-            /*
-             * Borde negro para que sea visible
-             * sobre cualquier fondo.
-             */
+            c.stroke();
 
-            ctx.beginPath();
-
-            ctx.moveTo(
-                x1,
-                y1
-            );
-
-            ctx.lineTo(
-                x2,
-                y2
-            );
-
-            ctx.strokeStyle =
-                'rgba(0,0,0,.75)';
-
-            ctx.lineWidth =
-                Math.max(
-                    8,
-                    w / 260
-                );
-
-            ctx.stroke();
+            c.setLineDash([]);
 
             /*
-             * Línea cian.
+             * PÉNDULO
+             *
+             * La lectura se representa con la inclinación
+             * real del sensor.
              */
 
-            ctx.beginPath();
+            const rad =
+                angulo *
+                Math.PI /
+                180;
 
-            ctx.moveTo(
-                x1,
-                y1
+            const longitud =
+                radius * .72;
+
+            const px =
+                cx +
+                Math.sin(rad) *
+                longitud;
+
+            const py =
+                cy +
+                Math.cos(rad) *
+                longitud;
+
+            /*
+             * Sombra/línea exterior
+             */
+
+            c.beginPath();
+
+            c.moveTo(
+                cx,
+                cy
             );
 
-            ctx.lineTo(
-                x2,
-                y2
+            c.lineTo(
+                px,
+                py
             );
 
-            ctx.strokeStyle =
-                SENSOR_LINE_COLOR;
-
-            ctx.lineWidth =
+            c.lineWidth =
                 Math.max(
-                    4,
-                    w / 500
+                    12,
+                    radius * .07
                 );
 
-            ctx.stroke();
+            c.lineCap =
+                'round';
 
-            ctx.restore();
+            c.strokeStyle =
+                'rgba(0,0,0,.8)';
+
+            c.stroke();
+
+            /*
+             * Línea del péndulo
+             */
+
+            c.beginPath();
+
+            c.moveTo(
+                cx,
+                cy
+            );
+
+            c.lineTo(
+                px,
+                py
+            );
+
+            c.lineWidth =
+                Math.max(
+                    7,
+                    radius * .042
+                );
+
+            c.strokeStyle =
+                '#ff3b30';
+
+            c.stroke();
+
+            /*
+             * Punto de suspensión
+             */
+
+            c.beginPath();
+
+            c.arc(
+                cx,
+                cy,
+                Math.max(
+                    10,
+                    radius * .065
+                ),
+                0,
+                Math.PI * 2
+            );
+
+            c.fillStyle =
+                '#ffffff';
+
+            c.fill();
+
+            c.strokeStyle =
+                '#000000';
+
+            c.lineWidth =
+                Math.max(
+                    3,
+                    radius * .018
+                );
+
+            c.stroke();
+
+            /*
+             * Peso del péndulo
+             */
+
+            c.beginPath();
+
+            c.arc(
+                px,
+                py,
+                Math.max(
+                    15,
+                    radius * .09
+                ),
+                0,
+                Math.PI * 2
+            );
+
+            c.fillStyle =
+                '#ff3b30';
+
+            c.fill();
+
+            c.strokeStyle =
+                '#ffffff';
+
+            c.lineWidth =
+                Math.max(
+                    3,
+                    radius * .02
+                );
+
+            c.stroke();
+
+            /*
+             * Lectura digital
+             */
+
+            const lectura =
+                Math.abs(angulo).toFixed(2);
+
+            const signo =
+                angulo > 0
+                    ? '+'
+                    : angulo < 0
+                        ? '-'
+                        : '';
+
+            const texto =
+                `${signo}${lectura}°`;
+
+            const boxW =
+                radius * .85;
+
+            const boxH =
+                radius * .28;
+
+            const boxX =
+                cx -
+                boxW / 2;
+
+            const boxY =
+                cy +
+                radius * .91;
+
+            c.fillStyle =
+                'rgba(0,0,0,.78)';
+
+            c.beginPath();
+
+            c.roundRect(
+                boxX,
+                boxY,
+                boxW,
+                boxH,
+                boxH * .25
+            );
+
+            c.fill();
+
+            c.font =
+                `bold ${Math.max(20, radius * .16)}px Arial`;
+
+            c.fillStyle =
+                '#ffeb3b';
+
+            c.fillText(
+                texto,
+                cx,
+                boxY + boxH / 2
+            );
+
+            /*
+             * Texto auxiliar
+             */
+
+            c.font =
+                `bold ${Math.max(11, radius * .07)}px Arial`;
+
+            c.fillStyle =
+                '#ffffff';
+
+            c.fillText(
+                'ALINEAR CON EL POSTE',
+                cx,
+                cy +
+                radius * 1.19
+            );
+
+            c.restore();
         }
 
-        /* =========================================================
-           CÁMARA
-        ========================================================= */
+        /* =====================================================
+           CAPTURA DE CÁMARA
+        ===================================================== */
 
         async function iniciarCamara() {
 
@@ -1325,7 +1784,7 @@
                     modo === 'medir'
                         ? '📏 MEDIR POSTE: captura la foto y después marca 2 puntos de referencia y 2 puntos del poste.'
                         : modo === 'plomado'
-                            ? '📐 PLOMADO: captura la foto y después marca BASE y PARTE SUPERIOR del poste.'
+                            ? '📐 PLOMADO: alinea el péndulo con el poste. El valor mostrado se estampará en la fotografía.'
                             : '✅ Cámara lista. Puedes tomar la fotografía o activar SEÑALAR.'
                 );
 
@@ -1344,6 +1803,10 @@
                     true;
             }
         }
+
+        /* =====================================================
+           CONFIGURAR MODO
+        ===================================================== */
 
         function configurarModo() {
 
@@ -1367,18 +1830,26 @@
 
                 specialHelp.textContent =
                     'Escribe la medida real del objeto sólido conocido. Luego toma la foto. El objeto de referencia debe estar aproximadamente en el mismo plano/distancia que el poste.';
+
+                pendulumHud.style.display =
+                    'none';
             }
 
             if (modo === 'plomado') {
 
-                verticalGuide.style.display =
+                specialPanel.style.display =
+                    'none';
+
+                pendulumHud.style.display =
                     'block';
+
+                actualizarPendulo();
             }
         }
 
-        /* =========================================================
+        /* =====================================================
            GPS
-        ========================================================= */
+        ===================================================== */
 
         function obtenerGPS() {
 
@@ -1404,9 +1875,9 @@
             });
         }
 
-        /* =========================================================
+        /* =====================================================
            CAPTURA BASE
-        ========================================================= */
+        ===================================================== */
 
         function capturaBase() {
 
@@ -1423,15 +1894,14 @@
                 );
             }
 
-            canvas.width = w;
-            canvas.height = h;
+            canvas.width =
+                w;
+
+            canvas.height =
+                h;
 
             const ctx =
                 canvas.getContext('2d');
-
-            /*
-             * Fotografía limpia de la cámara.
-             */
 
             ctx.drawImage(
                 video,
@@ -1441,20 +1911,69 @@
                 h
             );
 
-            /*
-             * IMPORTANTE:
-             * En plomado, la línea de sensores
-             * también queda integrada en la foto.
-             */
-
-            dibujarGuiaSensorEnCanvas(
-                ctx,
-                w,
-                h
-            );
-
             return ctx;
         }
+
+        /* =====================================================
+           DIBUJAR PÉNDULO SOBRE FOTO
+        ===================================================== */
+
+        function dibujarPenduloEnFoto(
+            ctx,
+            w,
+            h,
+            angulo
+        ) {
+
+            /*
+             * Creamos un área proporcional a la pantalla
+             * original del HUD.
+             */
+
+            const areaW =
+                Math.min(
+                    w * .48,
+                    900
+                );
+
+            const areaH =
+                Math.min(
+                    h * .52,
+                    1000
+                );
+
+            const x =
+                (w - areaW) / 2;
+
+            const y =
+                h * .08;
+
+            ctx.save();
+
+            ctx.translate(
+                x,
+                y
+            );
+
+            /*
+             * Dibujamos exactamente el mismo gráfico
+             * usado en vivo.
+             */
+
+            dibujarGraficoPendulo(
+                ctx,
+                areaW,
+                areaH,
+                angulo,
+                false
+            );
+
+            ctx.restore();
+        }
+
+        /* =====================================================
+           TOMAR FOTO
+        ===================================================== */
 
         async function tomarFoto() {
 
@@ -1474,23 +1993,136 @@
                     new Date();
 
                 /*
-                 * Capturamos primero la imagen.
-                 * En plomado, aquí ya se incluye
-                 * la línea de sensores.
+                 * =================================================
+                 * PLOMADO
+                 * =================================================
+                 *
+                 * MUY IMPORTANTE:
+                 *
+                 * Aquí NO se dibuja primero el estampado normal.
+                 *
+                 * Se captura la fotografía limpia,
+                 * se congela el ángulo del péndulo,
+                 * se dibuja el péndulo,
+                 * y finalmente se dibuja UNA SOLA VEZ
+                 * el estampado.
+                 */
+
+                if (modo === 'plomado') {
+
+                    const ctx =
+                        capturaBase();
+
+                    /*
+                     * Congelamos exactamente el valor que
+                     * estaba mostrando el péndulo al tocar FOTO.
+                     */
+
+                    pendulumAngleAtCapture =
+                        pendulumAngle;
+
+                    /*
+                     * Dibujamos el péndulo sobre la foto.
+                     */
+
+                    dibujarPenduloEnFoto(
+                        ctx,
+                        canvas.width,
+                        canvas.height,
+                        pendulumAngleAtCapture
+                    );
+
+                    /*
+                     * Estampado ÚNICO.
+                     */
+
+                    dibujarEstampado(
+                        ctx,
+                        canvas.width,
+                        canvas.height,
+                        [
+                            `PLOMADO: ${Math.abs(pendulumAngleAtCapture).toFixed(2)}°`
+                        ]
+                    );
+
+                    fotoBase =
+                        canvas.toDataURL(
+                            'image/jpeg',
+                            .92
+                        );
+
+                    enviarFotoFinal(
+                        fotoBase,
+                        {
+                            modo: 'plomado',
+
+                            metadata: {
+
+                                plomado: {
+
+                                    grados:
+                                        Number(
+                                            Math.abs(
+                                                pendulumAngleAtCapture
+                                            ).toFixed(2)
+                                        ),
+
+                                    gradosFirmados:
+                                        Number(
+                                            pendulumAngleAtCapture.toFixed(2)
+                                        ),
+
+                                    referencia:
+                                        'PENDULO_SENSOR'
+                                }
+                            }
+                        }
+                    );
+
+                    return;
+                }
+
+                /*
+                 * =================================================
+                 * MEDIR POSTE
+                 * =================================================
+                 */
+
+                if (modo === 'medir') {
+
+                    /*
+                     * Para medir se captura la foto limpia
+                     * y el estampado se realiza una sola vez
+                     * al finalizar los puntos.
+                     */
+
+                    const ctx =
+                        capturaBase();
+
+                    fotoBase =
+                        canvas.toDataURL(
+                            'image/jpeg',
+                            .92
+                        );
+
+                    specialPanel.style.display =
+                        'none';
+
+                    abrirEditorPuntos(
+                        'medir'
+                    );
+
+                    return;
+                }
+
+                /*
+                 * =================================================
+                 * NORMAL
+                 * =================================================
                  */
 
                 const ctx =
                     capturaBase();
-
-                /*
-                 * Para evitar estampados duplicados,
-                 * NO se manda la foto a otra función
-                 * que vuelva a estamparla.
-                 *
-                 * El estampado inicial solamente se
-                 * utiliza en la foto normal y en la foto
-                 * que servirá como base del editor.
-                 */
 
                 dibujarEstampado(
                     ctx,
@@ -1514,27 +2146,6 @@
                     return;
                 }
 
-                if (modo === 'medir') {
-
-                    specialPanel.style.display =
-                        'none';
-
-                    abrirEditorPuntos(
-                        'medir'
-                    );
-
-                    return;
-                }
-
-                if (modo === 'plomado') {
-
-                    abrirEditorPuntos(
-                        'plomado'
-                    );
-
-                    return;
-                }
-
                 enviarFotoFinal(
                     fotoBase,
                     {
@@ -1553,9 +2164,9 @@
             }
         }
 
-        /* =========================================================
+        /* =====================================================
            EDITOR DE FLECHA
-        ========================================================= */
+        ===================================================== */
 
         function abrirEditorFlecha() {
 
@@ -1585,10 +2196,6 @@
             im.src =
                 fotoBase;
         }
-
-        let arrowEditor = null;
-
-        let arrowCanvas = null;
 
         function crearEditorFlechaDOM() {
 
@@ -1760,6 +2367,21 @@
             };
         }
 
+        function puntoRect(
+            x,
+            y,
+            r
+        ) {
+
+            return (
+                r &&
+                x >= r.x &&
+                x <= r.x + r.width &&
+                y >= r.y &&
+                y <= r.y + r.height
+            );
+        }
+
         function arrowBlocked(
             x,
             y,
@@ -1832,21 +2454,6 @@
             return false;
         }
 
-        function puntoRect(
-            x,
-            y,
-            r
-        ) {
-
-            return (
-                r &&
-                x >= r.x &&
-                x <= r.x + r.width &&
-                y >= r.y &&
-                y <= r.y + r.height
-            );
-        }
-
         function dibujarFlecha() {
 
             if (!arrowCanvas) {
@@ -1859,9 +2466,7 @@
             im.onload = () => {
 
                 const c =
-                    arrowCanvas.getContext(
-                        '2d'
-                    );
+                    arrowCanvas.getContext('2d');
 
                 c.clearRect(
                     0,
@@ -2031,9 +2636,9 @@
                 fotoBase;
         }
 
-        /* =========================================================
-           GESTOS DE FLECHA
-        ========================================================= */
+        /* =====================================================
+           GESTOS FLECHA
+        ===================================================== */
 
         function iniciarGestosFlecha() {
 
@@ -2328,9 +2933,9 @@
             );
         }
 
-        /* =========================================================
-           CERRAR EDITOR DE FLECHA
-        ========================================================= */
+        /* =====================================================
+           CERRAR EDITOR FLECHA
+        ===================================================== */
 
         function cerrarEditorFlecha() {
 
@@ -2358,20 +2963,26 @@
                 'inline-block';
 
             signalButton.style.display =
-                'inline-block';
+                modo === 'normal'
+                    ? 'inline-block'
+                    : 'none';
         }
 
-        /* =========================================================
+        /* =====================================================
            EDITOR DE PUNTOS
-        ========================================================= */
-
-        let moverPuntosActivo = false;
-
-        let puntoSeleccionado = -1;
-
-        let puntoArrastrando = false;
+           SOLO MEDIR
+        ===================================================== */
 
         function abrirEditorPuntos(m) {
+
+            /*
+             * Seguridad:
+             * este editor solamente debe abrirse para MEDIR.
+             */
+
+            if (m !== 'medir') {
+                return;
+            }
 
             pointEditor.style.display =
                 'block';
@@ -2383,9 +2994,7 @@
                 video.videoHeight;
 
             const c =
-                pointCanvas.getContext(
-                    '2d'
-                );
+                pointCanvas.getContext('2d');
 
             const im =
                 new Image();
@@ -2407,11 +3016,6 @@
 
             points = [];
 
-            specialStage =
-                m === 'medir'
-                    ? 'reference'
-                    : 'post';
-
             moverPuntosActivo =
                 false;
 
@@ -2424,18 +3028,9 @@
             pointMove.textContent =
                 '🔧 MOVER PUNTOS';
 
-            if (m === 'medir') {
-
-                setStatus(
-                    '📏 Marca R1 y R2 en la referencia. Después BASE y PUNTA del POSTE. Puedes activar MOVER PUNTOS para corregirlos.'
-                );
-
-            } else {
-
-                setStatus(
-                    '📐 Marca BASE y después PARTE SUPERIOR del poste. Puedes activar MOVER PUNTOS para corregirlos.'
-                );
-            }
+            setStatus(
+                '📏 Marca R1 y R2 en la referencia. Después BASE y PUNTA del POSTE. Puedes activar MOVER PUNTOS para corregirlos.'
+            );
         }
 
         function puntoDesdeEvento(e) {
@@ -2501,15 +3096,7 @@
             }
 
             if (
-                points.length >= 4 &&
-                modo === 'medir'
-            ) {
-                return false;
-            }
-
-            if (
-                points.length >= 2 &&
-                modo === 'plomado'
+                points.length >= 4
             ) {
                 return false;
             }
@@ -2641,9 +3228,9 @@
             }
         );
 
-        /* =========================================================
+        /* =====================================================
            DIBUJAR PUNTOS
-        ========================================================= */
+        ===================================================== */
 
         function dibujarPuntos() {
 
@@ -2652,9 +3239,7 @@
             }
 
             const c =
-                pointCanvas.getContext(
-                    '2d'
-                );
+                pointCanvas.getContext('2d');
 
             c.drawImage(
                 pointImage,
@@ -2662,36 +3247,24 @@
                 0
             );
 
-            /*
-             * Línea de edición.
-             * Amarilla para que sea diferente
-             * a la guía del sensor.
-             */
-
             c.lineWidth =
                 Math.max(
-                    4,
-                    pointCanvas.width / 650
+                    5,
+                    pointCanvas.width / 400
                 );
 
             c.strokeStyle =
-                POST_LINE_COLOR;
+                '#00ff00';
 
             c.fillStyle =
-                POST_LINE_COLOR;
+                '#00ff00';
 
-            const labels =
-                modo === 'medir'
-                    ? [
-                        'R1',
-                        'R2',
-                        'BASE',
-                        'PUNTA'
-                    ]
-                    : [
-                        'BASE',
-                        'PUNTA'
-                    ];
+            const labels = [
+                'R1',
+                'R2',
+                'BASE',
+                'PUNTA'
+            ];
 
             points.forEach((p, i) => {
 
@@ -2721,18 +3294,13 @@
                 );
 
                 c.fillStyle =
-                    POST_LINE_COLOR;
+                    '#00ff00';
             });
 
-            const pairs =
-                modo === 'medir'
-                    ? [
-                        [0, 1],
-                        [2, 3]
-                    ]
-                    : [
-                        [0, 1]
-                    ];
+            const pairs = [
+                [0, 1],
+                [2, 3]
+            ];
 
             pairs.forEach(([a, b]) => {
 
@@ -2796,9 +3364,9 @@
             }
         );
 
-        /* =========================================================
-           CÁLCULOS
-        ========================================================= */
+        /* =====================================================
+           CÁLCULOS MEDICIÓN
+        ===================================================== */
 
         function distancia(a, b) {
 
@@ -2808,160 +3376,78 @@
             );
         }
 
-        function anguloLinea(a, b) {
-
-            return (
-                Math.atan2(
-                    b.y - a.y,
-                    b.x - a.x
-                ) *
-                180 /
-                Math.PI
-            );
-        }
-
-        function verticalDeviation(a, b) {
-
-            const g =
-                screenGravity();
-
-            const ga =
-                Math.atan2(
-                    g.x,
-                    -g.y
-                ) *
-                180 /
-                Math.PI;
-
-            const pa =
-                anguloLinea(a, b);
-
-            const d =
-                ((pa - ga + 90) % 180) - 90;
-
-            return {
-
-                degrees:
-                    Math.abs(d),
-
-                signed:
-                    d,
-
-                verticalAngle:
-                    ga,
-
-                postAngle:
-                    pa
-            };
-        }
-
-        /* =========================================================
-           CONFIRMAR PUNTOS
-        ========================================================= */
+        /* =====================================================
+           CONFIRMAR MEDICIÓN
+        ===================================================== */
 
         function confirmarPuntos() {
 
-            if (modo === 'medir') {
+            if (modo !== 'medir') {
+                return;
+            }
 
-                if (
-                    points.length !== 4
-                ) {
+            if (
+                points.length !== 4
+            ) {
 
-                    return alert(
-                        'Debes marcar exactamente 4 puntos: R1, R2, BASE y PUNTA.'
-                    );
-                }
-
-                const refPx =
-                    distancia(
-                        points[0],
-                        points[1]
-                    );
-
-                const postPx =
-                    distancia(
-                        points[2],
-                        points[3]
-                    );
-
-                if (refPx < 2) {
-
-                    return alert(
-                        'La línea de referencia es demasiado corta.'
-                    );
-                }
-
-                const h =
-                    referenceReal *
-                    postPx /
-                    refPx;
-
-                specialResult = {
-
-                    referenceReal,
-
-                    referencePixels:
-                        refPx,
-
-                    postPixels:
-                        postPx,
-
-                    height:
-                        h
-                };
-
-                finalizarEspecial(
-                    [
-                        `REF: ${referenceReal.toFixed(3)} m`,
-                        `ALTURA POSTE: ${h.toFixed(3)} m`
-                    ],
-                    {
-                        medicion:
-                            specialResult
-                    }
-                );
-
-            } else {
-
-                if (
-                    points.length !== 2
-                ) {
-
-                    return alert(
-                        'Debes marcar BASE y PARTE SUPERIOR del poste.'
-                    );
-                }
-
-                const r =
-                    verticalDeviation(
-                        points[0],
-                        points[1]
-                    );
-
-                specialResult =
-                    r;
-
-                finalizarEspecial(
-                    [
-                        `PLOMADO: ${r.degrees.toFixed(2)}°`,
-                        `VERTICAL SENSOR: ${r.verticalAngle.toFixed(2)}°`,
-                        `POSTE: ${r.postAngle.toFixed(2)}°`
-                    ],
-                    {
-                        plomado:
-                            r
-                    }
+                return alert(
+                    'Debes marcar exactamente 4 puntos: R1, R2, BASE y PUNTA.'
                 );
             }
+
+            const refPx =
+                distancia(
+                    points[0],
+                    points[1]
+                );
+
+            const postPx =
+                distancia(
+                    points[2],
+                    points[3]
+                );
+
+            if (refPx < 2) {
+
+                return alert(
+                    'La línea de referencia es demasiado corta.'
+                );
+            }
+
+            const h =
+                referenceReal *
+                postPx /
+                refPx;
+
+            specialResult = {
+
+                referenceReal,
+
+                referencePixels:
+                    refPx,
+
+                postPixels:
+                    postPx,
+
+                height:
+                    h
+            };
+
+            finalizarEspecial(
+                [
+                    `REF: ${referenceReal.toFixed(3)} m`,
+                    `ALTURA POSTE: ${h.toFixed(3)} m`
+                ],
+                {
+                    medicion:
+                        specialResult
+                }
+            );
         }
 
-        /* =========================================================
-           ANOTACIONES FINALES
-           
-           CORRECCIÓN:
-           La línea BASE-PUNTA ahora es más delgada
-           y amarilla.
-        ========================================================= */
+        /* =====================================================
+           ANOTACIONES FINALES DE MEDICIÓN
+        ===================================================== */
 
         function dibujarAnotacionesFinales(
             c,
@@ -2969,53 +3455,34 @@
             h
         ) {
 
-            const labels =
-                modo === 'medir'
-                    ? [
-                        'R1',
-                        'R2',
-                        'BASE',
-                        'PUNTA'
-                    ]
-                    : [
-                        'BASE',
-                        'PUNTA'
-                    ];
+            const labels = [
+                'R1',
+                'R2',
+                'BASE',
+                'PUNTA'
+            ];
 
-            const pairs =
-                modo === 'medir'
-                    ? [
-                        [0, 1],
-                        [2, 3]
-                    ]
-                    : [
-                        [0, 1]
-                    ];
-
-            /*
-             * LÍNEA MÁS DELGADA.
-             *
-             * Antes era bastante gruesa.
-             * Ahora queda aproximadamente en 3-5 px
-             * dependiendo de la resolución.
-             */
+            const pairs = [
+                [0, 1],
+                [2, 3]
+            ];
 
             const lineW =
                 Math.max(
-                    3,
-                    w / 650
+                    5,
+                    w / 520
                 );
 
             const radius =
                 Math.max(
-                    14,
-                    w / 80
+                    16,
+                    w / 70
                 );
 
             const fs =
                 Math.max(
-                    26,
-                    w / 52
+                    28,
+                    w / 48
                 );
 
             const off =
@@ -3033,8 +3500,7 @@
                 'round';
 
             /*
-             * Borde negro muy fino para que la línea
-             * amarilla sea visible.
+             * Línea exterior.
              */
 
             c.strokeStyle =
@@ -3043,8 +3509,8 @@
             c.lineWidth =
                 lineW +
                 Math.max(
-                    3,
-                    w / 900
+                    6,
+                    w / 700
                 );
 
             pairs.forEach(([a, b]) => {
@@ -3071,12 +3537,11 @@
             });
 
             /*
-             * Línea BASE-PUNTA:
-             * AMARILLA Y DELGADA.
+             * Línea verde.
              */
 
             c.strokeStyle =
-                POST_LINE_COLOR;
+                '#00ff66';
 
             c.lineWidth =
                 lineW;
@@ -3105,7 +3570,7 @@
             });
 
             /*
-             * PUNTOS.
+             * Puntos.
              */
 
             c.font =
@@ -3126,8 +3591,8 @@
                     p.y,
                     radius +
                     Math.max(
-                        3,
-                        w / 700
+                        4,
+                        w / 500
                     ),
                     0,
                     Math.PI * 2
@@ -3138,7 +3603,7 @@
                 c.beginPath();
 
                 c.fillStyle =
-                    POST_LINE_COLOR;
+                    '#00ff66';
 
                 c.arc(
                     p.x,
@@ -3159,9 +3624,6 @@
 
                 const ty =
                     p.y - off;
-
-                c.font =
-                    `bold ${fs}px Arial`;
 
                 const box =
                     c.measureText(
@@ -3191,15 +3653,9 @@
             c.restore();
         }
 
-        /* =========================================================
-           FINALIZAR ESPECIAL
-           
-           IMPORTANTE:
-           Aquí se vuelve a construir la fotografía final
-           UNA SOLA VEZ.
-           
-           No se llama a dibujarEstampado dos veces.
-        ========================================================= */
+        /* =====================================================
+           FINALIZAR MEDICIÓN
+        ===================================================== */
 
         function finalizarEspecial(
             extra,
@@ -3216,9 +3672,7 @@
                 pointCanvas.height;
 
             const c =
-                canvas.getContext(
-                    '2d'
-                );
+                canvas.getContext('2d');
 
             c.clearRect(
                 0,
@@ -3226,13 +3680,6 @@
                 canvas.width,
                 canvas.height
             );
-
-            /*
-             * Imagen base.
-             *
-             * En plomado esta imagen YA contiene
-             * la línea cian del sensor.
-             */
 
             c.drawImage(
                 pointImage,
@@ -3242,10 +3689,6 @@
                 canvas.height
             );
 
-            /*
-             * Línea BASE-PUNTA amarilla.
-             */
-
             dibujarAnotacionesFinales(
                 c,
                 canvas.width,
@@ -3253,49 +3696,15 @@
             );
 
             /*
-             * Un solo estampado final.
-             *
-             * La foto base usada para el editor ya
-             * tenía un estampado, por lo que se necesita
-             * reconstruir la imagen limpia antes de llegar
-             * aquí para evitar duplicación.
-             *
-             * Si pointImage contiene el estampado, se
-             * mantiene como parte de la fotografía.
+             * ÚNICO estampado para medición.
              */
 
-            /*
-             * Para evitar que el estampado anterior
-             * vuelva a ser agregado encima, solo se
-             * agrega el bloque adicional una vez.
-             *
-             * La función dibujarEstampado genera el
-             * estampado completo; por eso primero
-             * reconstruimos la imagen original sin
-             * el estampado cuando estamos en modos
-             * especiales.
-             */
-
-            if (
-                modo === 'medir' ||
-                modo === 'plomado'
-            ) {
-
-                /*
-                 * La foto base ya trae el estampado
-                 * inicial. No lo volvemos a dibujar.
-                 *
-                 * En su lugar añadimos únicamente
-                 * la información específica del modo.
-                 */
-
-                dibujarEstampadoEspecial(
-                    c,
-                    canvas.width,
-                    canvas.height,
-                    extra
-                );
-            }
+            dibujarEstampado(
+                c,
+                canvas.width,
+                canvas.height,
+                extra
+            );
 
             fotoBase =
                 canvas.toDataURL(
@@ -3309,112 +3718,9 @@
             );
         }
 
-        /* =========================================================
-           ESTAMPADO ESPECIAL
-           
-           Agrega SOLO la información adicional del
-           plomado/medición sin duplicar el bloque normal.
-        ========================================================= */
-
-        function dibujarEstampadoEspecial(
-            ctx,
-            w,
-            h,
-            extra = []
-        ) {
-
-            if (!extra || !extra.length) {
-                return;
-            }
-
-            const s =
-                Math.max(w, h) / 1200;
-
-            const pad =
-                Math.round(16 * s);
-
-            const font =
-                Math.max(
-                    16,
-                    Math.round(20 * s)
-                );
-
-            const line =
-                27 * s;
-
-            /*
-             * Ponemos únicamente los resultados
-             * especiales en un bloque independiente.
-             */
-
-            ctx.font =
-                `bold ${font}px Arial`;
-
-            let tw = 0;
-
-            extra.forEach(text => {
-
-                tw = Math.max(
-                    tw,
-                    ctx.measureText(text).width
-                );
-            });
-
-            const bw =
-                tw + pad * 2;
-
-            const bh =
-                extra.length * line +
-                pad * 2;
-
-            const x =
-                w -
-                bw -
-                pad;
-
-            const y =
-                h -
-                bh -
-                pad;
-
-            ctx.save();
-
-            ctx.fillStyle =
-                'rgba(0,0,0,.65)';
-
-            ctx.beginPath();
-
-            ctx.roundRect(
-                x,
-                y,
-                bw,
-                bh,
-                10 * s
-            );
-
-            ctx.fill();
-
-            ctx.fillStyle =
-                'rgba(255,255,255,.96)';
-
-            ctx.textBaseline =
-                'top';
-
-            extra.forEach((text, i) => {
-
-                ctx.fillText(
-                    text,
-                    x + pad,
-                    y + pad + i * line
-                );
-            });
-
-            ctx.restore();
-        }
-
-        /* =========================================================
+        /* =====================================================
            MEDIDA REAL
-        ========================================================= */
+        ===================================================== */
 
         measureStart.addEventListener(
             'click',
@@ -3452,9 +3758,9 @@
             }
         );
 
-        /* =========================================================
-           ENVÍO DE FOTO
-        ========================================================= */
+        /* =====================================================
+           ENVÍO FOTO
+        ===================================================== */
 
         function enviarFotoFinal(
             dataURL,
@@ -3656,9 +3962,9 @@
             );
         }
 
-        /* =========================================================
+        /* =====================================================
            DETENER CÁMARA
-        ========================================================= */
+        ===================================================== */
 
         function detenerCamara() {
 
@@ -3697,9 +4003,9 @@
             }
         }
 
-        /* =========================================================
+        /* =====================================================
            SEÑALAR
-        ========================================================= */
+        ===================================================== */
 
         signalButton.addEventListener(
             'click',
@@ -3726,18 +4032,18 @@
             }
         );
 
-        /* =========================================================
+        /* =====================================================
            FOTO
-        ========================================================= */
+        ===================================================== */
 
         takeButton.addEventListener(
             'click',
             tomarFoto
         );
 
-        /* =========================================================
+        /* =====================================================
            SALIR
-        ========================================================= */
+        ===================================================== */
 
         cancelButton.addEventListener(
             'click',
@@ -3755,9 +4061,9 @@
             }
         );
 
-        /* =========================================================
+        /* =====================================================
            CONFIRMAR FLECHA
-        ========================================================= */
+        ===================================================== */
 
         confirmButton.addEventListener(
             'click',
@@ -3821,9 +4127,9 @@
             }
         );
 
-        /* =========================================================
+        /* =====================================================
            CANCELAR FLECHA
-        ========================================================= */
+        ===================================================== */
 
         cancelSignalButton.addEventListener(
             'click',
@@ -3840,9 +4146,9 @@
             }
         );
 
-        /* =========================================================
-           PUNTOS
-        ========================================================= */
+        /* =====================================================
+           CONFIRMAR PUNTOS
+        ===================================================== */
 
         pointConfirm.addEventListener(
             'click',
@@ -3859,14 +4165,14 @@
                 points = [];
 
                 setStatus(
-                    'Medición/plomado cancelado. Puedes tomar otra fotografía.'
+                    'Medición cancelada. Puedes tomar otra fotografía.'
                 );
             }
         );
 
-        /* =========================================================
-           INICIO
-        ========================================================= */
+        /* =====================================================
+           REDIMENSIONAR
+        ===================================================== */
 
         window.addEventListener(
             'resize',
@@ -3879,12 +4185,28 @@
 
                     ajustarCanvasFlecha();
                 }
+
+                if (modo === 'plomado') {
+
+                    prepararCanvasPendulo();
+
+                    dibujarPenduloLive();
+                }
             }
         );
+
+        /* =====================================================
+           INICIO
+        ===================================================== */
 
         window.addEventListener(
             'load',
             async () => {
+
+                /*
+                 * Creamos y cerramos el editor de flecha
+                 * para mantener la lógica original.
+                 */
 
                 crearEditorFlechaDOM();
 
@@ -3905,11 +4227,14 @@
 
                     specialHelp.textContent =
                         'Captura la medida real del objeto conocido. La referencia y el poste deben estar aproximadamente a la misma distancia/plano para reducir error de perspectiva.';
+
+                    pendulumHud.style.display =
+                        'none';
                 }
 
                 if (modo === 'plomado') {
 
-                    verticalGuide.style.display =
+                    pendulumHud.style.display =
                         'block';
                 }
 
