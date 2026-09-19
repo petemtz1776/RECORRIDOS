@@ -1216,36 +1216,35 @@
 
         function capturaBase() {
 
-            const w =
-                video.videoWidth;
+    const w =
+        video.videoWidth;
 
-            const h =
-                video.videoHeight;
+    const h =
+        video.videoHeight;
 
-            if (!w || !h) {
+    if (!w || !h) {
 
-                throw new Error(
-                    'La cámara todavía no está lista.'
-                );
-            }
+        throw new Error(
+            'La cámara todavía no está lista.'
+        );
+    }
 
-            canvas.width = w;
-            canvas.height = h;
+    canvas.width = w;
+    canvas.height = h;
 
-            const ctx =
-                canvas.getContext('2d');
+    const ctx =
+        canvas.getContext('2d');
 
-            ctx.drawImage(
-                video,
-                0,
-                0,
-                w,
-                h
-            );
+    ctx.drawImage(
+        video,
+        0,
+        0,
+        w,
+        h
+    );
 
-            return ctx;
-        }
-
+    return ctx;
+}
         async function tomarFoto() {
 
             try {
