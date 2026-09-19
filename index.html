@@ -1,10 +1,17 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>PETES CAMERA STAMP</title>
-<style>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width,initial-scale=1,viewport-fit=cover"
+    >
+
+    <title>PETES CAMERA STAMP</title>
+
+    <style>
         * {
             box-sizing: border-box;
         }
@@ -307,16 +314,33 @@
 
 <body>
 
-<div id="cameraContainer">
-  <video id="video" autoplay playsinline muted></video>
-  <canvas id="canvas"></canvas>
-  <canvas id="workCanvas"></canvas>
-  <div id="hud">
-    <div id="modeBadge">📷 CÁMARA</div>
-    <br>
-    <div id="sensorHud">Sensores: esperando…</div>
-  </div>
-  <div id="verticalGuide"></div>
+    <div id="cameraContainer">
+
+        <video
+            id="video"
+            autoplay
+            playsinline
+            muted
+        ></video>
+
+        <canvas id="canvas"></canvas>
+        <canvas id="workCanvas"></canvas>
+
+        <div id="hud">
+
+            <div id="modeBadge">
+                📷 CÁMARA
+            </div>
+
+            <br>
+
+            <div id="sensorHud">
+                Sensores: esperando…
+            </div>
+
+        </div>
+
+        <div id="verticalGuide"></div>
 
         <!-- =========================
              PANEL MEDICIÓN
@@ -408,8 +432,9 @@
 
     </div>
 
-    <img id="preview" style="display:none; max-width:100%; margin-top:10px;" />
-<script>
+    <img id="preview">
+
+    <script>
         'use strict';
 
         /* =========================================================
@@ -467,9 +492,14 @@
            DOM
         ========================================================= */
 
-       const video = document.getElementById('video');
-  const canvas = document.getElementById('canvas');
-  const workCanvas = document.getElementById('workCanvas');
+        const video =
+            document.getElementById('video');
+
+        const canvas =
+            document.getElementById('canvas');
+
+        const workCanvas =
+            document.getElementById('workCanvas');
 
         const startButton =
             document.getElementById('startButton');
@@ -489,23 +519,32 @@
         const cancelButton =
             document.getElementById('cancelButton');
 
-        const status = document.getElementById('status');
-  const preview = document.getElementById('preview');
+        const status =
+            document.getElementById('status');
 
-         const modeBadge = document.getElementById('modeBadge');
+        const preview =
+            document.getElementById('preview');
 
-         const sensorHud = document.getElementById('sensorHud');
+        const modeBadge =
+            document.getElementById('modeBadge');
 
-        const verticalGuide = document.getElementById('verticalGuide');
+        const sensorHud =
+            document.getElementById('sensorHud');
 
-       const specialPanel = document.getElementById('specialPanel');
+        const verticalGuide =
+            document.getElementById('verticalGuide');
 
-         const knownMeasure = document.getElementById('knownMeasure');
+        const specialPanel =
+            document.getElementById('specialPanel');
+
+        const knownMeasure =
+            document.getElementById('knownMeasure');
 
         const specialHelp =
             document.getElementById('specialHelp');
 
-         const measureStart = document.getElementById('measureStart');
+        const measureStart =
+            document.getElementById('measureStart');
 
         const pointEditor =
             document.getElementById('pointEditor');
@@ -529,11 +568,13 @@
            ESTADO
         ========================================================= */
 
-         let cameraStream = null;
-  let gpsActual = null;
-  let fechaFoto = null;
-  let logoImagen = null;
-  let logoListo = false;
+        let cameraStream = null;
+        let gpsActual = null;
+        let fechaFoto = null;
+
+        let logoImagen = null;
+        let logoListo = false;
+
         let zonaLogo = null;
         let zonaEstampado = null;
 
@@ -541,10 +582,10 @@
 
         let fotoBase = null;
 
-         let flechaX = null;
-  let flechaY = null;
-  let flechaAngulo = 0;
-  let flechaEscala = 1;
+        let flechaX = null;
+        let flechaY = null;
+        let flechaAngulo = 0;
+        let flechaEscala = 1;
 
         let gestoActivo = false;
         let toqueInicial = null;
@@ -564,11 +605,10 @@
 
         let specialStage = null;
         let referenceReal = null;
-         let points = [];
-         let pointImage = null;
+        let points = [];
+        let pointImage = null;
         let specialResult = null;
-        let modo = 'normal'; // o 'medir', 'plomado'
-        let tipo = 'poste'; // ejemplo
+
         /* =========================================================
            FUNCIONES GENERALES
         ========================================================= */
