@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -8,138 +7,245 @@
 
 <style>
 *{box-sizing:border-box}
+
 html,body{
-    margin:0;width:100%;height:100%;
-    background:#000;color:#fff;
+    margin:0;
+    width:100%;
+    height:100%;
+    background:#000;
+    color:#fff;
     font-family:Arial,sans-serif;
     overflow:hidden;
 }
+
 #cameraContainer{
-    position:relative;width:100%;height:100dvh;
-    max-width:900px;margin:auto;
-    background:#000;overflow:hidden;
+    position:relative;
+    width:100%;
+    height:100dvh;
+    max-width:900px;
+    margin:auto;
+    background:#000;
+    overflow:hidden;
 }
+
 #video{
-    position:absolute;inset:0;
-    width:100%;height:100%;
-    object-fit:cover;background:#000;
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    background:#000;
 }
-#canvas,#workCanvas{display:none}
+
+#canvas,#workCanvas{
+    display:none;
+}
+
+/* ================= HUD ================= */
 
 #hud{
-    position:absolute;top:0;left:0;right:0;
-    z-index:20;padding:8px;
+    position:absolute;
+    top:0;
+    left:0;
+    right:0;
+    z-index:20;
+    padding:8px;
     pointer-events:none;
 }
+
 #modeBadge{
     display:inline-block;
     background:rgba(0,0,0,.72);
-    padding:8px 10px;border-radius:8px;
-    font-weight:bold;font-size:13px;
+    padding:8px 10px;
+    border-radius:8px;
+    font-weight:bold;
+    font-size:13px;
 }
+
 #sensorHud{
-    margin-top:6px;display:inline-block;
+    margin-top:6px;
+    display:inline-block;
     background:rgba(0,0,0,.62);
-    padding:7px 10px;border-radius:8px;
+    padding:7px 10px;
+    border-radius:8px;
     font-size:12px;
 }
 
 /* ================= PLOMADO ================= */
 
 #plomadoOverlay{
-    position:absolute;z-index:18;inset:0;
-    pointer-events:none;display:none;
+    position:absolute;
+    z-index:18;
+    inset:0;
+    pointer-events:none;
+    display:none;
 }
+
 #plomadoCanvas{
-    position:absolute;inset:0;
-    width:100%;height:100%;display:block;
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    display:block;
 }
+
 #plomadoReading{
-    position:absolute;z-index:19;
-    top:30%;left:50%;
+    position:absolute;
+    z-index:19;
+    top:30%;
+    left:50%;
     transform:translateX(-50%);
     background:rgba(0,0,0,.72);
     border:2px solid rgba(255,255,255,.75);
-    border-radius:12px;padding:8px 15px;
-    font-size:22px;font-weight:bold;
-    white-space:nowrap;text-align:center;
+    border-radius:12px;
+    padding:8px 15px;
+    font-size:22px;
+    font-weight:bold;
+    white-space:nowrap;
+    text-align:center;
 }
+
 #plomadoHelp{
-    position:absolute;z-index:19;
-    top:37%;left:50%;
+    position:absolute;
+    z-index:19;
+    top:37%;
+    left:50%;
     transform:translateX(-50%);
     background:rgba(0,0,0,.58);
-    border-radius:8px;padding:6px 10px;
-    font-size:12px;white-space:nowrap;
+    border-radius:8px;
+    padding:6px 10px;
+    font-size:12px;
+    white-space:nowrap;
 }
 
 /* ================= CONTROLES ================= */
 
 #controls{
-    position:absolute;z-index:30;
-    left:0;right:0;bottom:0;
+    position:absolute;
+    z-index:30;
+    left:0;
+    right:0;
+    bottom:0;
     padding:9px 7px calc(9px + env(safe-area-inset-bottom));
-    display:flex;flex-wrap:wrap;
-    justify-content:center;gap:6px;
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:6px;
     background:linear-gradient(transparent,rgba(0,0,0,.96));
 }
-button,input{font:inherit}
-button{
-    border:0;border-radius:8px;
-    padding:11px 13px;min-height:46px;
-    font-weight:bold;cursor:pointer;
+
+button,input{
+    font:inherit;
 }
-button:disabled{opacity:.45}
-#takeButton{background:#4caf50;color:#fff}
-#signalButton{background:#ff9800;color:#fff}
-#confirmButton{background:#4caf50;color:#fff;display:none}
-#cancelSignalButton{background:#f44336;color:#fff;display:none}
-#cancelButton{background:#b71c1c;color:#fff}
+
+button{
+    border:0;
+    border-radius:8px;
+    padding:11px 13px;
+    min-height:46px;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+button:disabled{
+    opacity:.45;
+}
+
+#takeButton{
+    background:#4caf50;
+    color:#fff;
+}
+
+#signalButton{
+    background:#ff9800;
+    color:#fff;
+}
+
+#confirmButton{
+    background:#4caf50;
+    color:#fff;
+    display:none;
+}
+
+#cancelSignalButton{
+    background:#f44336;
+    color:#fff;
+    display:none;
+}
+
+#cancelButton{
+    background:#b71c1c;
+    color:#fff;
+}
 
 /* ================= PANEL ================= */
 
 #specialPanel{
-    position:absolute;z-index:40;
-    left:8px;right:8px;top:76px;
+    position:absolute;
+    z-index:40;
+    left:8px;
+    right:8px;
+    top:76px;
     background:rgba(0,0,0,.82);
-    padding:12px;border-radius:10px;
-    display:none;pointer-events:auto;
+    padding:12px;
+    border-radius:10px;
+    display:none;
+    pointer-events:auto;
 }
+
 #specialPanel label{
-    display:block;font-size:13px;
-    font-weight:bold;margin-bottom:5px;
+    display:block;
+    font-size:13px;
+    font-weight:bold;
+    margin-bottom:5px;
 }
+
 #knownMeasure{
-    width:100%;padding:10px;
-    border-radius:7px;border:1px solid #777;
-    background:#fff;color:#000;
-    font-size:17px;margin-bottom:7px;
+    width:100%;
+    padding:10px;
+    border-radius:7px;
+    border:1px solid #777;
+    background:#fff;
+    color:#000;
+    font-size:17px;
+    margin-bottom:7px;
 }
-#specialHelp{font-size:13px;line-height:1.35}
+
+#specialHelp{
+    font-size:13px;
+    line-height:1.35;
+}
+
 #measureStart{
-    margin-top:8px;background:#1565c0;
-    color:#fff;width:100%;
+    margin-top:8px;
+    background:#1565c0;
+    color:#fff;
+    width:100%;
 }
 
 /* ================= EDITOR ================= */
 
 .measureEditor{
-    position:absolute;inset:0;
-    z-index:50;background:#000;
+    position:absolute;
+    inset:0;
+    z-index:50;
+    background:#000;
     overflow:hidden;
     touch-action:none;
 }
+
 .measureCanvas{
     position:absolute;
     display:block;
     touch-action:none;
 }
 
-/* ================= PUNTOS MEDICION ================= */
+/* ================= PUNTOS ================= */
 
 .measurePoint{
     position:absolute;
-    width:34px;height:34px;
+    width:34px;
+    height:34px;
     margin:-17px 0 0 -17px;
     border-radius:50%;
     border:3px solid #fff;
@@ -151,15 +257,28 @@ button:disabled{opacity:.45}
     font-size:13px;
     pointer-events:none;
 }
-.measurePoint.r1{background:#ff9800}
-.measurePoint.r2{background:#9c27b0}
-.measurePoint.base{background:#00aaff}
-.measurePoint.punta{background:#00c853}
+
+.measurePoint.r1{
+    background:#ff9800;
+}
+
+.measurePoint.r2{
+    background:#9c27b0;
+}
+
+.measurePoint.base{
+    background:#00aaff;
+}
+
+.measurePoint.punta{
+    background:#00c853;
+}
 
 .measureToolbar{
     position:absolute;
     z-index:60;
-    left:8px;right:8px;
+    left:8px;
+    right:8px;
     bottom:8px;
     background:rgba(0,0,0,.82);
     border-radius:12px;
@@ -169,17 +288,33 @@ button:disabled{opacity:.45}
     justify-content:center;
     gap:5px;
 }
+
 .measureToolbar button{
     min-height:42px;
     padding:9px 11px;
 }
-#measureFinish{background:#4caf50;color:#fff}
-#measureUndo{background:#607d8b;color:#fff}
-#measureCancel{background:#b71c1c;color:#fff}
+
+#measureFinish{
+    background:#4caf50;
+    color:#fff;
+}
+
+#measureUndo{
+    background:#607d8b;
+    color:#fff;
+}
+
+#measureCancel{
+    background:#b71c1c;
+    color:#fff;
+}
+
 .measureInstruction{
     position:absolute;
     z-index:60;
-    top:8px;left:8px;right:8px;
+    top:8px;
+    left:8px;
+    right:8px;
     background:rgba(0,0,0,.78);
     border-radius:9px;
     padding:9px;
@@ -190,27 +325,43 @@ button:disabled{opacity:.45}
 /* ================= STATUS ================= */
 
 #status{
-    position:absolute;z-index:60;
-    left:8px;right:8px;bottom:88px;
+    position:absolute;
+    z-index:60;
+    left:8px;
+    right:8px;
+    bottom:88px;
     background:rgba(0,0,0,.7);
-    padding:8px;border-radius:8px;
+    padding:8px;
+    border-radius:8px;
     font-size:12px;
     white-space:pre-line;
     pointer-events:none;
 }
+
 #preview{
     display:none;
-    max-width:100%;max-height:100%;
+    max-width:100%;
+    max-height:100%;
     margin:auto;
 }
 
 @media(max-width:420px){
-    button{padding:10px 9px;font-size:12px;min-height:45px}
-    #specialPanel{top:68px}
-    #plomadoReading{font-size:19px}
+
+    button{
+        padding:10px 9px;
+        font-size:12px;
+        min-height:45px;
+    }
+
+    #specialPanel{
+        top:68px;
+    }
+
+    #plomadoReading{
+        font-size:19px;
+    }
 }
 </style>
-
 </head>
 
 <body>
@@ -219,28 +370,36 @@ button:disabled{opacity:.45}
 
 <video id="video" autoplay playsinline muted></video>
 
-<canvas id="canvas"></canvas> <canvas id="workCanvas"></canvas>
+<canvas id="canvas"></canvas>
+<canvas id="workCanvas"></canvas>
 
 <div id="hud">
-    <div id="modeBadge">📷 CÁMARA</div>
+
+    <div id="modeBadge">
+        📷 CÁMARA
+    </div>
+
     <br>
-    <div id="sensorHud">Sensores: esperando…</div>
+
+    <div id="sensorHud">
+        Sensores: esperando…
+    </div>
+
 </div>
 
 <!-- ================= PLOMADO ================= -->
 
 <div id="plomadoOverlay">
+
     <canvas id="plomadoCanvas"></canvas>
 
-```
-<div id="plomadoReading">
-    PLOMADO: 0.00°
-</div>
+    <div id="plomadoReading">
+        PLOMADO: 0.00°
+    </div>
 
-<div id="plomadoHelp">
-    Alinea el poste con el péndulo
-</div>
-```
+    <div id="plomadoHelp">
+        Alinea el poste con el péndulo
+    </div>
 
 </div>
 
@@ -248,42 +407,53 @@ button:disabled{opacity:.45}
 
 <div id="specialPanel">
 
-<label for="knownMeasure">
-    MEDIDA REAL DEL OBJETO DE REFERENCIA
-</label>
+    <label for="knownMeasure">
+        MEDIDA REAL DEL OBJETO DE REFERENCIA
+    </label>
 
-<input
-id="knownMeasure"
-type="number"
-step="0.001"
-min="0.001"
-placeholder="Ejemplo: 2.00 metros"
+    <input
+        id="knownMeasure"
+        type="number"
+        step="0.001"
+        min="0.001"
+        placeholder="Ejemplo: 2.00 metros"
+    >
 
->
+    <div id="specialHelp">
+        Captura la medida real del objeto conocido.
+    </div>
 
-<div id="specialHelp">
-    Captura la medida real del objeto conocido.
+    <button id="measureStart">
+        CONTINUAR
+    </button>
+
 </div>
 
-<button id="measureStart">
-    CONTINUAR
-</button>
-
+<div id="status">
+    Abriendo cámara…
 </div>
-
-<div id="status">Abriendo cámara…</div>
 
 <div id="controls">
 
-<button id="signalButton">🎯 SEÑALAR</button>
+    <button id="signalButton">
+        🎯 SEÑALAR
+    </button>
 
-<button id="takeButton" disabled>📸 FOTO</button>
+    <button id="takeButton" disabled>
+        📸 FOTO
+    </button>
 
-<button id="confirmButton">✅ USAR</button>
+    <button id="confirmButton">
+        ✅ USAR
+    </button>
 
-<button id="cancelSignalButton">❌ CANCELAR</button>
+    <button id="cancelSignalButton">
+        ❌ CANCELAR
+    </button>
 
-<button id="cancelButton">✕ SALIR</button>
+    <button id="cancelButton">
+        ✕ SALIR
+    </button>
 
 </div>
 
@@ -379,16 +549,6 @@ let orientationHandler=null;
 
 let gravity={x:0,y:-1,z:0};
 let gravityReady=false;
-
-/*
- * NUEVO:
- * Guardamos los valores reales de DeviceOrientation.
- * Esto se usa solamente para calcular el plomado.
- */
-let orientationData={
-    beta:null,
-    gamma:null
-};
 
 let plomadoGrados=0;
 let plomadoActivo=false;
@@ -603,13 +763,6 @@ async function iniciarSensores(){
                 };
 
                 gravityReady=true;
-
-                /*
-                 * Se mantiene el sensor de gravedad.
-                 * Ya no se usa como única fuente para
-                 * determinar el ángulo del plomado.
-                 */
-
                 actualizarPlomado();
             }
         };
@@ -631,19 +784,7 @@ async function iniciarSensores(){
                 throw new Error('Permiso de orientación no concedido');
         }
 
-        orientationHandler=e=>{
-
-            /*
-             * Guardamos beta/gamma directamente.
-             * gamma = inclinación izquierda/derecha.
-             * beta  = inclinación adelante/atrás.
-             */
-            if(Number.isFinite(e.beta))
-                orientationData.beta=e.beta;
-
-            if(Number.isFinite(e.gamma))
-                orientationData.gamma=e.gamma;
-
+        orientationHandler=()=>{
             actualizarPlomado();
         };
 
@@ -701,112 +842,9 @@ function screenGravity(){
 
 /* =========================================================
    ANGULO PENDULO
-   ========================================================= */
-
-/*
- * CORRECCIÓN DEL PLOMADO
- *
- * El problema estaba en usar directamente x/y de
- * accelerationIncludingGravity para decidir la inclinación
- * visual. En vertical algunos teléfonos entregan esos ejes
- * de forma que el cálculo termina llevando el péndulo a
- * izquierda/derecha.
- *
- * Ahora:
- *
- * VERTICAL:
- *   usamos gamma, que representa la inclinación izquierda/
- *   derecha del teléfono.
- *
- * HORIZONTAL:
- *   usamos beta, adaptándolo al giro de pantalla.
- *
- * Si DeviceOrientation no entrega datos todavía,
- * hacemos fallback al sensor de gravedad anterior.
- */
+========================================================= */
 
 function calcularAnguloPendulo(){
-
-    const orientacion=(
-        screen.orientation &&
-        Number.isFinite(screen.orientation.angle)
-    )
-        ? screen.orientation.angle
-        : (
-            window.innerWidth>window.innerHeight
-                ? 90
-                : 0
-        );
-
-    const gamma=orientationData.gamma;
-    const beta=orientationData.beta;
-
-    /*
-     * ============================
-     * VERTICAL
-     * ============================
-     *
-     * En vertical queremos que:
-     *
-     * teléfono derecho -> 0°
-     * inclinado derecha -> positivo
-     * inclinado izquierda -> negativo
-     *
-     * gamma representa izquierda/derecha.
-     */
-    if(
-        (orientacion===0||orientacion===180) &&
-        Number.isFinite(gamma)
-    ){
-
-        let ang=gamma;
-
-        /*
-         * Si el teléfono está invertido verticalmente,
-         * conservamos la dirección visual correcta.
-         */
-        if(orientacion===180)
-            ang=-ang;
-
-        return clamp(
-            ang,
-            -90,
-            90
-        );
-    }
-
-    /*
-     * ============================
-     * HORIZONTAL
-     * ============================
-     */
-
-    if(
-        (orientacion===90||orientacion===270) &&
-        Number.isFinite(beta)
-    ){
-
-        let ang=beta;
-
-        /*
-         * Ajustamos el eje según el lado del teléfono
-         * utilizado para landscape.
-         */
-        if(orientacion===90)
-            ang=-ang;
-
-        return clamp(
-            ang,
-            -90,
-            90
-        );
-    }
-
-    /*
-     * ============================
-     * FALLBACK GRAVEDAD
-     * ============================
-     */
 
     const g=screenGravity();
 
@@ -850,7 +888,7 @@ function calcularAnguloPendulo(){
 }
 
 /* =========================================================
-   TRANSPORTADOR DEL PLOMADO
+   TRANSPORTADOR EN PANTALLA
 ========================================================= */
 
 function dibujarTransportador(){
@@ -879,11 +917,20 @@ function dibujarTransportador(){
     c.setTransform(dpr,0,0,dpr,0,0);
     c.clearRect(0,0,w,h);
 
-    /*
-       MEDIO CIRCULO:
-       parte plana arriba,
-       arco hacia abajo.
-    */
+    dibujarPlomadoGrafico(
+        c,
+        w,
+        h,
+        true
+    );
+}
+
+/* =========================================================
+   GRAFICO PLOMADO
+   Se usa tanto en pantalla como en la foto final.
+========================================================= */
+
+function dibujarPlomadoGrafico(c,w,h,conTexto){
 
     const cx=w/2;
     const cy=Math.max(90,h*.16);
@@ -895,7 +942,11 @@ function dibujarTransportador(){
 
     c.save();
 
-    /* arco */
+    /*
+       SEMICIRCULO
+       parte plana arriba
+       arco hacia abajo
+    */
 
     c.beginPath();
 
@@ -912,15 +963,19 @@ function dibujarTransportador(){
             cy+
             radius*Math.cos(rad);
 
-        if(i===0)c.moveTo(x,y);
-        else c.lineTo(x,y);
+        if(i===0)
+            c.moveTo(x,y);
+        else
+            c.lineTo(x,y);
     }
 
     c.strokeStyle='rgba(255,255,255,.92)';
     c.lineWidth=3;
     c.stroke();
 
-    /* marcas */
+    /*
+       MARCAS
+    */
 
     for(let deg=-90;deg<=90;deg++){
 
@@ -936,8 +991,10 @@ function dibujarTransportador(){
 
         let largo=9;
 
-        if(deg%10===0)largo=27;
-        else if(deg%5===0)largo=18;
+        if(deg%10===0)
+            largo=27;
+        else if(deg%5===0)
+            largo=18;
 
         const x2=
             cx+
@@ -966,34 +1023,45 @@ function dibujarTransportador(){
         c.stroke();
     }
 
-    /* numeros */
+    /*
+       NUMEROS
+    */
 
-    c.textAlign='center';
-    c.textBaseline='middle';
-    c.font='bold 13px Arial';
+    if(conTexto){
 
-    for(let deg=-90;deg<=90;deg+=10){
+        c.textAlign='center';
+        c.textBaseline='middle';
+        c.font='bold 13px Arial';
 
-        const rad=deg*Math.PI/180;
-        const tr=radius-43;
+        for(let deg=-90;deg<=90;deg+=10){
 
-        const tx=
-            cx+
-            tr*Math.sin(rad);
+            const rad=deg*Math.PI/180;
+            const tr=radius-43;
 
-        const ty=
-            cy+
-            tr*Math.cos(rad);
+            const tx=
+                cx+
+                tr*Math.sin(rad);
 
-        c.fillStyle=
-            deg===0
-                ? '#00ff00'
-                : '#fff';
+            const ty=
+                cy+
+                tr*Math.cos(rad);
 
-        c.fillText(`${deg}°`,tx,ty);
+            c.fillStyle=
+                deg===0
+                    ? '#00ff00'
+                    : '#fff';
+
+            c.fillText(
+                `${deg}°`,
+                tx,
+                ty
+            );
+        }
     }
 
-    /* punto de giro */
+    /*
+       PUNTO DE GIRO
+    */
 
     c.beginPath();
     c.arc(cx,cy,9,0,Math.PI*2);
@@ -1004,7 +1072,9 @@ function dibujarTransportador(){
     c.lineWidth=2;
     c.stroke();
 
-    /* pendulo */
+    /*
+       PENDULO ROJO
+    */
 
     const ang=plomadoGrados*Math.PI/180;
 
@@ -1021,29 +1091,39 @@ function dibujarTransportador(){
         cy+
         longitud*Math.cos(ang);
 
-    /* contorno */
+    /*
+       CONTORNO NEGRO
+    */
 
     c.beginPath();
     c.moveTo(cx,cy);
     c.lineTo(px,py);
+
     c.strokeStyle='rgba(0,0,0,.85)';
     c.lineWidth=10;
     c.lineCap='round';
     c.stroke();
 
-    /* rojo */
+    /*
+       PENDULO ROJO
+    */
 
     c.beginPath();
     c.moveTo(cx,cy);
     c.lineTo(px,py);
+
     c.strokeStyle='#ff3030';
     c.lineWidth=5;
+    c.lineCap='round';
     c.stroke();
 
-    /* peso */
+    /*
+       PESO
+    */
 
     c.beginPath();
     c.arc(px,py,11,0,Math.PI*2);
+
     c.fillStyle='#ff3030';
     c.fill();
 
@@ -1052,48 +1132,59 @@ function dibujarTransportador(){
     c.stroke();
 
     /*
-       REFERENCIA VERTICAL
+       LINEA VERDE DE REFERENCIA VERTICAL
     */
 
     c.beginPath();
+
     c.moveTo(cx,cy);
+
     c.lineTo(
         cx,
         Math.min(h,cy+longitud)
     );
 
-    c.strokeStyle='rgba(0,150,255,.72)';
-    c.lineWidth=2;
+    c.strokeStyle='#00ff00';
+    c.lineWidth=3;
     c.setLineDash([8,8]);
     c.stroke();
     c.setLineDash([]);
 
     c.restore();
-
-    plomadoReading.textContent=
-        `PLOMADO: ${Math.abs(plomadoGrados).toFixed(2)}°`;
-
-    const sentido=
-        Math.abs(plomadoGrados)<.005
-            ? 'CENTRADO'
-            : plomadoGrados>0
-                ? 'DERECHA'
-                : 'IZQUIERDA';
-
-    plomadoHelp.textContent=
-        `Péndulo: ${Math.abs(plomadoGrados).toFixed(2)}° ${sentido}`;
 }
+
+/* =========================================================
+   PLOMADO SOBRE LA FOTO
+========================================================= */
+
+function dibujarPlomadoEnFoto(ctx,w,h){
+
+    /*
+       Se dibuja exactamente el mismo gráfico
+       directamente sobre el canvas de la fotografía.
+    */
+
+    dibujarPlomadoGrafico(
+        ctx,
+        w,
+        h,
+        true
+    );
+}
+
+/* =========================================================
+   ACTUALIZAR PLOMADO
+========================================================= */
 
 function actualizarPlomado(){
 
-    if(modo!=='plomado')return;
+    if(modo!=='plomado')
+        return;
 
     plomadoGrados=calcularAnguloPendulo();
 
     sensorHud.textContent=
-        gravityReady||
-        Number.isFinite(orientationData.gamma)||
-        Number.isFinite(orientationData.beta)
+        gravityReady
             ? `Sensores: ACTIVOS | péndulo ${plomadoGrados.toFixed(2)}°`
             : 'Sensores: esperando…';
 
@@ -1109,9 +1200,12 @@ async function iniciarCamara(){
 
     try{
 
-        if(cameraStream)detenerCamara();
+        if(cameraStream)
+            detenerCamara();
 
-        setStatus('Solicitando permiso de cámara…');
+        setStatus(
+            'Solicitando permiso de cámara…'
+        );
 
         cameraStream=
             await navigator.mediaDevices.getUserMedia({
@@ -1189,6 +1283,7 @@ function configurarModo(){
 
         plomadoActivo=true;
         plomadoOverlay.style.display='block';
+
         dibujarTransportador();
     }
 }
@@ -1224,7 +1319,7 @@ function obtenerGPS(){
 }
 
 /* =========================================================
-   CAPTURA
+   CAPTURA BASE
 ========================================================= */
 
 function capturaBase(){
@@ -1233,7 +1328,9 @@ function capturaBase(){
     const h=video.videoHeight;
 
     if(!w||!h)
-        throw new Error('La cámara todavía no está lista.');
+        throw new Error(
+            'La cámara todavía no está lista.'
+        );
 
     canvas.width=w;
     canvas.height=h;
@@ -1257,7 +1354,9 @@ async function tomarFoto(){
     try{
 
         if(!cameraStream)
-            throw new Error('La cámara no está iniciada.');
+            throw new Error(
+                'La cámara no está iniciada.'
+            );
 
         gpsActual=await obtenerGPS();
         fechaFoto=new Date();
@@ -1313,13 +1412,15 @@ async function tomarFoto(){
 
             specialPanel.style.display='none';
 
-            const ctx=capturaBase();
+            /*
+               IMPORTANTE:
+               Para medición NO se estampa aquí.
+               fotoBase queda como fotografía limpia.
+               El único estampado se hará en
+               finalizarMedicion().
+            */
 
-            dibujarEstampado(
-                ctx,
-                canvas.width,
-                canvas.height
-            );
+            capturaBase();
 
             fotoBase=canvas.toDataURL(
                 'image/jpeg',
@@ -1335,7 +1436,8 @@ async function tomarFoto(){
 
         if(modo==='plomado'){
 
-            plomadoGrados=calcularAnguloPendulo();
+            plomadoGrados=
+                calcularAnguloPendulo();
 
             setStatus(
                 `📐 Lectura capturada: ${Math.abs(plomadoGrados).toFixed(2)}°. Guardando…`
@@ -1351,13 +1453,14 @@ async function tomarFoto(){
         console.error(e);
 
         setStatus(
-            '❌ ERROR AL TOMAR FOTO\n'+e.message
+            '❌ ERROR AL TOMAR FOTO\n'+
+            e.message
         );
     }
 }
 
 /* =========================================================
-   EDITOR DE MEDICION DE POSTE
+   EDITOR MEDICION
 ========================================================= */
 
 let measureEditor=null;
@@ -1373,6 +1476,10 @@ let measurePoints={
 
 let measureStep='r1';
 
+/* =========================================================
+   ABRIR EDITOR
+========================================================= */
+
 function abrirEditorMedicion(){
 
     cerrarEditorMedicion();
@@ -1383,26 +1490,39 @@ function abrirEditorMedicion(){
     measureCanvas=document.createElement('canvas');
     measureCanvas.className='measureCanvas';
 
-    measureEditor.appendChild(measureCanvas);
+    measureEditor.appendChild(
+        measureCanvas
+    );
 
     const instruction=document.createElement('div');
-    instruction.className='measureInstruction';
-    instruction.id='measureInstruction';
 
-    measureEditor.appendChild(instruction);
+    instruction.className=
+        'measureInstruction';
+
+    instruction.id=
+        'measureInstruction';
+
+    measureEditor.appendChild(
+        instruction
+    );
 
     const toolbar=document.createElement('div');
-    toolbar.className='measureToolbar';
+
+    toolbar.className=
+        'measureToolbar';
 
     const undo=document.createElement('button');
+
     undo.id='measureUndo';
     undo.textContent='↩ DESHACER';
 
     const finish=document.createElement('button');
+
     finish.id='measureFinish';
     finish.textContent='✅ TERMINAR';
 
     const cancel=document.createElement('button');
+
     cancel.id='measureCancel';
     cancel.textContent='❌ CANCELAR';
 
@@ -1420,10 +1540,14 @@ function abrirEditorMedicion(){
 
     im.onload=()=>{
 
-        measureCanvas.width=im.naturalWidth;
-        measureCanvas.height=im.naturalHeight;
+        measureCanvas.width=
+            im.naturalWidth;
+
+        measureCanvas.height=
+            im.naturalHeight;
 
         ajustarCanvasMedicion();
+
         dibujarEditorMedicion();
 
         measureCanvas.addEventListener(
@@ -1445,6 +1569,7 @@ function abrirEditorMedicion(){
             'click',
             ()=>{
                 cerrarEditorMedicion();
+
                 setStatus(
                     'Medición cancelada. Puedes tomar otra fotografía.'
                 );
@@ -1462,15 +1587,18 @@ function abrirEditorMedicion(){
 }
 
 /* =========================================================
-   AJUSTE DEL CANVAS DE MEDICION
+   AJUSTE CANVAS MEDICION
 ========================================================= */
 
 function ajustarCanvasMedicion(){
 
-    if(!measureCanvas)return;
+    if(!measureCanvas)
+        return;
 
     const container=
-        document.getElementById('cameraContainer');
+        document.getElementById(
+            'cameraContainer'
+        );
 
     const cw=container.clientWidth;
     const ch=container.clientHeight;
@@ -1486,8 +1614,11 @@ function ajustarCanvasMedicion(){
     const dw=iw*escala;
     const dh=ih*escala;
 
-    measureCanvas.style.width=dw+'px';
-    measureCanvas.style.height=dh+'px';
+    measureCanvas.style.width=
+        dw+'px';
+
+    measureCanvas.style.height=
+        dh+'px';
 
     measureCanvas.style.left=
         ((cw-dw)/2)+'px';
@@ -1497,12 +1628,13 @@ function ajustarCanvasMedicion(){
 }
 
 /* =========================================================
-   PUNTOS
+   PUNTO MEDICION
 ========================================================= */
 
 function puntoMedicion(e){
 
-    const r=measureCanvas.getBoundingClientRect();
+    const r=
+        measureCanvas.getBoundingClientRect();
 
     return{
         x:
@@ -1559,7 +1691,8 @@ function actualizarInstruccion(){
             'measureInstruction'
         );
 
-    if(!el)return;
+    if(!el)
+        return;
 
     if(measureStep==='r1'){
 
@@ -1598,9 +1731,11 @@ function actualizarInstruccion(){
 
 function dibujarEditorMedicion(){
 
-    if(!measureCanvas)return;
+    if(!measureCanvas)
+        return;
 
-    const c=measureCanvas.getContext('2d');
+    const c=
+        measureCanvas.getContext('2d');
 
     c.clearRect(
         0,
@@ -1626,35 +1761,78 @@ function dibujarEditorMedicion(){
         if(p.r1&&p.r2){
 
             c.beginPath();
-            c.moveTo(p.r1.x,p.r1.y);
-            c.lineTo(p.r2.x,p.r2.y);
+
+            c.moveTo(
+                p.r1.x,
+                p.r1.y
+            );
+
+            c.lineTo(
+                p.r2.x,
+                p.r2.y
+            );
 
             c.strokeStyle='#ff9800';
+
             c.lineWidth=Math.max(
                 4,
                 measureCanvas.width/500
             );
+
             c.stroke();
         }
 
         if(p.base&&p.punta){
 
             c.beginPath();
-            c.moveTo(p.base.x,p.base.y);
-            c.lineTo(p.punta.x,p.punta.y);
+
+            c.moveTo(
+                p.base.x,
+                p.base.y
+            );
+
+            c.lineTo(
+                p.punta.x,
+                p.punta.y
+            );
 
             c.strokeStyle='#00e5ff';
+
             c.lineWidth=Math.max(
                 4,
                 measureCanvas.width/500
             );
+
             c.stroke();
         }
 
-        dibujarPuntoCanvas(c,p.r1,'#ff9800','R1');
-        dibujarPuntoCanvas(c,p.r2,'#9c27b0','R2');
-        dibujarPuntoCanvas(c,p.base,'#00aaff','BASE');
-        dibujarPuntoCanvas(c,p.punta,'#00c853','PUNTA');
+        dibujarPuntoCanvas(
+            c,
+            p.r1,
+            '#ff9800',
+            'R1'
+        );
+
+        dibujarPuntoCanvas(
+            c,
+            p.r2,
+            '#9c27b0',
+            'R2'
+        );
+
+        dibujarPuntoCanvas(
+            c,
+            p.base,
+            '#00aaff',
+            'BASE'
+        );
+
+        dibujarPuntoCanvas(
+            c,
+            p.punta,
+            '#00c853',
+            'PUNTA'
+        );
 
         if(p.base&&p.punta){
 
@@ -1671,10 +1849,12 @@ function dibujarEditorMedicion(){
             );
 
             c.strokeStyle='#00ff88';
+
             c.lineWidth=Math.max(
                 3,
                 measureCanvas.width/700
             );
+
             c.stroke();
         }
     };
@@ -1682,9 +1862,19 @@ function dibujarEditorMedicion(){
     im.src=fotoBase;
 }
 
-function dibujarPuntoCanvas(c,p,color,text){
+/* =========================================================
+   PUNTO CANVAS
+========================================================= */
 
-    if(!p)return;
+function dibujarPuntoCanvas(
+    c,
+    p,
+    color,
+    text
+){
+
+    if(!p)
+        return;
 
     const r=Math.max(
         15,
@@ -1692,6 +1882,7 @@ function dibujarPuntoCanvas(c,p,color,text){
     );
 
     c.beginPath();
+
     c.arc(
         p.x,
         p.y,
@@ -1708,6 +1899,7 @@ function dibujarPuntoCanvas(c,p,color,text){
     c.stroke();
 
     c.fillStyle='#fff';
+
     c.font=
         `bold ${Math.max(14,r*.7)}px Arial`;
 
@@ -1743,18 +1935,26 @@ function calcularMedicion(){
         !p.base||
         !p.punta||
         !referenceReal
-    )return null;
+    )
+        return null;
 
     const referenciaPx=
-        distancia(p.r1,p.r2);
+        distancia(
+            p.r1,
+            p.r2
+        );
 
     const postePx=
-        distancia(p.base,p.punta);
+        distancia(
+            p.base,
+            p.punta
+        );
 
     if(
         referenciaPx<=0||
         postePx<=0
-    )return null;
+    )
+        return null;
 
     const metrosPorPixel=
         referenceReal/referenciaPx;
@@ -1807,7 +2007,8 @@ function deshacerMedicion(){
 
 function finalizarMedicion(){
 
-    const resultado=calcularMedicion();
+    const resultado=
+        calcularMedicion();
 
     if(!resultado){
 
@@ -1818,16 +2019,25 @@ function finalizarMedicion(){
         return;
     }
 
-    const finalCanvas=document.createElement('canvas');
+    const finalCanvas=
+        document.createElement('canvas');
 
-    finalCanvas.width=canvas.width;
-    finalCanvas.height=canvas.height;
+    finalCanvas.width=
+        canvas.width;
 
-    const ctx=finalCanvas.getContext('2d');
+    finalCanvas.height=
+        canvas.height;
+
+    const ctx=
+        finalCanvas.getContext('2d');
 
     const im=new Image();
 
     im.onload=()=>{
+
+        /*
+           FOTO LIMPIA
+        */
 
         ctx.drawImage(
             im,
@@ -1837,37 +2047,59 @@ function finalizarMedicion(){
             finalCanvas.height
         );
 
+        /*
+           REFERENCIA R1-R2
+        */
+
         ctx.beginPath();
+
         ctx.moveTo(
             measurePoints.r1.x,
             measurePoints.r1.y
         );
+
         ctx.lineTo(
             measurePoints.r2.x,
             measurePoints.r2.y
         );
+
         ctx.strokeStyle='#ff9800';
+
         ctx.lineWidth=Math.max(
             4,
             finalCanvas.width/500
         );
+
         ctx.stroke();
 
+        /*
+           LINEA POSTE
+        */
+
         ctx.beginPath();
+
         ctx.moveTo(
             measurePoints.base.x,
             measurePoints.base.y
         );
+
         ctx.lineTo(
             measurePoints.punta.x,
             measurePoints.punta.y
         );
+
         ctx.strokeStyle='#00e5ff';
+
         ctx.lineWidth=Math.max(
             4,
             finalCanvas.width/500
         );
+
         ctx.stroke();
+
+        /*
+           PUNTOS
+        */
 
         dibujarPuntoCanvasFinal(
             ctx,
@@ -1900,6 +2132,35 @@ function finalizarMedicion(){
             'PUNTA',
             finalCanvas.width
         );
+
+        /*
+           LINEA VERDE DE ALTURA
+        */
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+            measurePoints.base.x,
+            measurePoints.base.y
+        );
+
+        ctx.lineTo(
+            measurePoints.punta.x,
+            measurePoints.punta.y
+        );
+
+        ctx.strokeStyle='#00ff88';
+
+        ctx.lineWidth=Math.max(
+            3,
+            finalCanvas.width/700
+        );
+
+        ctx.stroke();
+
+        /*
+           ÚNICO ESTAMPADO DE LA FOTO DE MEDICION
+        */
 
         dibujarEstampado(
             ctx,
@@ -1956,6 +2217,10 @@ function finalizarMedicion(){
     im.src=fotoBase;
 }
 
+/* =========================================================
+   PUNTO FINAL
+========================================================= */
+
 function dibujarPuntoCanvasFinal(
     c,
     p,
@@ -2002,7 +2267,7 @@ function dibujarPuntoCanvasFinal(
 }
 
 /* =========================================================
-   CERRAR EDITOR MEDICION
+   CERRAR EDITOR
 ========================================================= */
 
 function cerrarEditorMedicion(){
@@ -2025,9 +2290,8 @@ function cerrarEditorMedicion(){
 
     measureStep='r1';
 
-    if(modo!=='normal'){
+    if(modo!=='normal')
         takeButton.style.display='inline-block';
-    }
 
     cancelButton.style.display='inline-block';
 
@@ -2036,7 +2300,7 @@ function cerrarEditorMedicion(){
 }
 
 /* =========================================================
-   PLOMADO
+   PLOMADO FINAL
 ========================================================= */
 
 function confirmarPlomado(){
@@ -2044,7 +2308,8 @@ function confirmarPlomado(){
     plomadoOverlay.style.display='none';
     plomadoActivo=false;
 
-    const grados=Math.abs(plomadoGrados);
+    const grados=
+        Math.abs(plomadoGrados);
 
     const direccion=
         Math.abs(plomadoGrados)<.005
@@ -2053,7 +2318,29 @@ function confirmarPlomado(){
                 ? 'DERECHA'
                 : 'IZQUIERDA';
 
+    /*
+       CAPTURAR FOTO
+    */
+
     const ctx=capturaBase();
+
+    /*
+       CORRECCION:
+       AHORA EL TRANSPORTADOR, PENDULO
+       Y LINEA VERDE SE ESTAMPAN SOBRE
+       EL CANVAS REAL DE LA FOTO.
+    */
+
+    dibujarPlomadoEnFoto(
+        ctx,
+        canvas.width,
+        canvas.height
+    );
+
+    /*
+       DESPUES SE AGREGA EL ESTAMPADO
+       UNA SOLA VEZ.
+    */
 
     dibujarEstampado(
         ctx,
@@ -2065,10 +2352,11 @@ function confirmarPlomado(){
         ]
     );
 
-    fotoBase=canvas.toDataURL(
-        'image/jpeg',
-        .92
-    );
+    fotoBase=
+        canvas.toDataURL(
+            'image/jpeg',
+            .92
+        );
 
     enviarFotoFinal(
         fotoBase,
@@ -2094,7 +2382,10 @@ function confirmarPlomado(){
    ENVIO
 ========================================================= */
 
-function enviarFotoFinal(dataURL,extra={}){
+function enviarFotoFinal(
+    dataURL,
+    extra={}
+){
 
     preview.src=dataURL;
     preview.style.display='block';
@@ -2150,15 +2441,17 @@ function enviarFotoFinal(dataURL,extra={}){
     const cerrarTrasAck=e=>{
 
         if(
-            !e||!
-            e.data||
+            !e||
+            !e.data||
             e.data.type!=='CAMERA_STAMP_ACK'
-        )return;
+        )
+            return;
 
         if(
             e.data.fileName&&
             e.data.fileName!==mensaje.fileName
-        )return;
+        )
+            return;
 
         confirmado=true;
 
@@ -2186,7 +2479,6 @@ function enviarFotoFinal(dataURL,extra={}){
                 window.close();
 
             }catch(_){}
-
         },150);
     };
 
@@ -2225,7 +2517,8 @@ function enviarFotoFinal(dataURL,extra={}){
 
     setTimeout(()=>{
 
-        if(confirmado)return;
+        if(confirmado)
+            return;
 
         window.removeEventListener(
             'message',
@@ -2243,15 +2536,12 @@ function enviarFotoFinal(dataURL,extra={}){
             if(
                 window.opener&&
                 !window.opener.closed
-            ){
-
+            )
                 window.opener.focus();
-            }
 
             window.close();
 
         }catch(_){}
-
     },2500);
 }
 
@@ -2443,7 +2733,9 @@ window.addEventListener(
             dibujarTransportador();
         }
 
-        setStatus('Abriendo cámara…');
+        setStatus(
+            'Abriendo cámara…'
+        );
 
         await iniciarCamara();
     }
