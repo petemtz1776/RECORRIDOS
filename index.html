@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 
@@ -342,7 +343,9 @@
 
         <div id="verticalGuide"></div>
 
-        <!-- PANEL MEDICIÓN -->
+        <!-- =========================
+             PANEL MEDICIÓN
+        ========================= -->
 
         <div id="specialPanel">
 
@@ -366,7 +369,9 @@
 
         </div>
 
-        <!-- EDITOR DE PUNTOS -->
+        <!-- =========================
+             EDITOR DE PUNTOS
+        ========================= -->
 
         <div id="pointEditor">
 
@@ -398,7 +403,9 @@
             Abriendo cámara…
         </div>
 
-        <!-- CONTROLES -->
+        <!-- =========================
+             CONTROLES PRINCIPALES
+        ========================= -->
 
         <div id="controls">
 
@@ -437,9 +444,11 @@
 
         const params = new URLSearchParams(location.search);
 
-        const tipo = params.get('tipo') || 'poste';
+        const tipo =
+            params.get('tipo') || 'poste';
 
-        let modo = params.get('modo') || 'normal';
+        let modo =
+            params.get('modo') || 'normal';
 
         if (
             String(tipo).trim().toUpperCase() ===
@@ -571,6 +580,12 @@
 
         let modoSenalar = false;
 
+        /*
+         * IMPORTANTE:
+         * fotoBase ahora siempre representa la fotografía
+         * limpia, sin estampado, hasta que el proceso final
+         * agregue el estampado correspondiente.
+         */
         let fotoBase = null;
 
         let flechaX = null;
@@ -1204,133 +1219,60 @@
         /* =========================================================
            CAPTURA BASE
            
-           CORRECCIÓN PRINCIPAL:
-           Captura exactamente la parte del video que
-           está visible con object-fit: cover.
+           IMPORTANTE:
+           Aquí SOLO se captura la fotografía.
+           NO se dibuja el estampado.
         ========================================================= */
 
         function capturaBase() {
 
-            const videoW =
+            const w =
                 video.videoWidth;
 
-            const videoH =
+            const h =
                 video.videoHeight;
 
-            if (!videoW || !videoH) {
+            if (!w || !h) {
 
                 throw new Error(
                     'La cámara todavía no está lista.'
                 );
             }
 
-            const container =
-                document.getElementById(
-                    'cameraContainer'
-                );
-
-            const containerW =
-                container.clientWidth;
-
-            const containerH =
-                container.clientHeight;
-
-            if (!containerW || !containerH) {
-
-                throw new Error(
-                    'El contenedor de la cámara todavía no tiene tamaño.'
-                );
-            }
-
-            /*
-             * Estas proporciones determinan exactamente
-             * el recorte que hace CSS:
-             *
-             * object-fit: cover
-             */
-
-            const videoRatio =
-                videoW / videoH;
-
-            const containerRatio =
-                containerW / containerH;
-
-            let sx = 0;
-            let sy = 0;
-            let sw = videoW;
-            let sh = videoH;
-
-            if (
-                videoRatio >
-                containerRatio
-            ) {
-
-                /*
-                 * El video es más ancho.
-                 * Se recortan los lados.
-                 */
-
-                sw =
-                    videoH *
-                    containerRatio;
-
-                sx =
-                    (videoW - sw) / 2;
-
-            } else {
-
-                /*
-                 * El video es más alto.
-                 * Se recortan arriba y abajo.
-                 */
-
-                sh =
-                    videoW /
-                    containerRatio;
-
-                sy =
-                    (videoH - sh) / 2;
-            }
-
-            /*
-             * IMPORTANTE:
-             *
-             * El canvas conserva ahora exactamente
-             * la relación de aspecto que se está viendo
-             * en la pantalla.
-             */
-
-            canvas.width =
-                Math.round(sw);
-
-            canvas.height =
-                Math.round(sh);
+            canvas.width = w;
+            canvas.height = h;
 
             const ctx =
                 canvas.getContext('2d');
 
+            ctx.clearRect(
+                0,
+                0,
+                w,
+                h
+            );
+
             ctx.drawImage(
                 video,
-
-                /*
-                 * Origen dentro del frame real
-                 */
-                sx,
-                sy,
-                sw,
-                sh,
-
-                /*
-                 * Destino en el canvas
-                 */
                 0,
                 0,
-                canvas.width,
-                canvas.height
+                w,
+                h
             );
 
             return ctx;
         }
+
+        /* =========================================================
+           TOMAR FOTO
+           
+           IMPORTANTE:
+           fotoBase queda SIN estampado.
+           El estampado se agrega después:
+           - normal: al momento de usar la foto
+           - medir: en finalizarEspecial()
+           - plomado: en finalizarEspecial()
+        ========================================================= */
 
         async function tomarFoto() {
 
@@ -1350,19 +1292,13 @@
                     new Date();
 
                 /*
-                 * Ahora la foto tiene exactamente
-                 * el mismo encuadre que la cámara.
+                 * Capturamos únicamente la fotografía.
                  */
+                capturaBase();
 
-                const ctx =
-                    capturaBase();
-
-                dibujarEstampado(
-                    ctx,
-                    canvas.width,
-                    canvas.height
-                );
-
+                /*
+                 * fotoBase es ahora una fotografía limpia.
+                 */
                 fotoBase =
                     canvas.toDataURL(
                         'image/jpeg',
@@ -1400,12 +1336,52 @@
                     return;
                 }
 
-                enviarFotoFinal(
-                    fotoBase,
-                    {
-                        modo: 'normal'
-                    }
+                /*
+                 * Modo normal sin señalar:
+                 * aquí sí se agrega el estampado una sola vez.
+                 */
+                const ctx =
+                    canvas.getContext('2d');
+
+                ctx.clearRect(
+                    0,
+                    0,
+                    canvas.width,
+                    canvas.height
                 );
+
+                const im =
+                    new Image();
+
+                im.onload = () => {
+
+                    ctx.drawImage(
+                        im,
+                        0,
+                        0,
+                        canvas.width,
+                        canvas.height
+                    );
+
+                    dibujarEstampado(
+                        ctx,
+                        canvas.width,
+                        canvas.height
+                    );
+
+                    enviarFotoFinal(
+                        canvas.toDataURL(
+                            'image/jpeg',
+                            .92
+                        ),
+                        {
+                            modo: 'normal'
+                        }
+                    );
+                };
+
+                im.src =
+                    fotoBase;
 
             } catch (e) {
 
@@ -1420,9 +1396,6 @@
 
         /* =========================================================
            EDITOR DE FLECHA
-           
-           La fotografía ya viene recortada al mismo
-           aspecto de la cámara.
         ========================================================= */
 
         function abrirEditorFlecha() {
@@ -1550,14 +1523,6 @@
             flechaAngulo = 0;
             flechaEscala = 1;
         }
-
-        /*
-         * Muestra la fotografía completa.
-         *
-         * Como capturaBase() ya creó una imagen con la misma
-         * relación de aspecto que la pantalla, normalmente
-         * ocupará exactamente el mismo espacio que la cámara.
-         */
 
         function ajustarCanvasFlecha() {
 
@@ -1789,8 +1754,6 @@
                         Math.PI / 4
                     );
 
-                /* Línea negra */
-
                 c.beginPath();
 
                 c.moveTo(
@@ -1819,8 +1782,6 @@
 
                 c.stroke();
 
-                /* Línea verde */
-
                 c.beginPath();
 
                 c.moveTo(
@@ -1845,8 +1806,6 @@
                     );
 
                 c.stroke();
-
-                /* Punta */
 
                 const a =
                     Math.atan2(
@@ -2256,10 +2215,10 @@
                 'block';
 
             pointCanvas.width =
-                canvas.width;
+                video.videoWidth;
 
             pointCanvas.height =
-                canvas.height;
+                video.videoHeight;
 
             const c =
                 pointCanvas.getContext(
@@ -2281,9 +2240,7 @@
                 c.drawImage(
                     im,
                     0,
-                    0,
-                    pointCanvas.width,
-                    pointCanvas.height
+                    0
                 );
 
                 pointImage =
@@ -2552,9 +2509,7 @@
             c.drawImage(
                 pointImage,
                 0,
-                0,
-                pointCanvas.width,
-                pointCanvas.height
+                0
             );
 
             c.lineWidth =
@@ -3056,6 +3011,8 @@
 
         /* =========================================================
            FINALIZAR ESPECIAL
+           
+           AQUÍ se agrega el estampado UNA SOLA VEZ.
         ========================================================= */
 
         function finalizarEspecial(
@@ -3084,6 +3041,9 @@
                 canvas.height
             );
 
+            /*
+             * Primero dibujamos la foto limpia.
+             */
             c.drawImage(
                 pointImage,
                 0,
@@ -3092,12 +3052,19 @@
                 canvas.height
             );
 
+            /*
+             * Después dibujamos las líneas/puntos.
+             */
             dibujarAnotacionesFinales(
                 c,
                 canvas.width,
                 canvas.height
             );
 
+            /*
+             * Finalmente agregamos UN SOLO estampado
+             * con la información correspondiente.
+             */
             dibujarEstampado(
                 c,
                 canvas.width,
@@ -3392,7 +3359,8 @@
                     motionHandler
                 );
 
-                motionHandler = null;
+                motionHandler =
+                    null;
             }
 
             if (orientationHandler) {
@@ -3402,7 +3370,8 @@
                     orientationHandler
                 );
 
-                orientationHandler = null;
+                orientationHandler =
+                    null;
             }
         }
 
@@ -3574,7 +3543,7 @@
         );
 
         /* =========================================================
-           RESIZE
+           INICIO
         ========================================================= */
 
         window.addEventListener(
@@ -3591,22 +3560,14 @@
             }
         );
 
-        /* =========================================================
-           INICIO
-        ========================================================= */
-
         window.addEventListener(
             'load',
             async () => {
 
                 /*
-                 * El editor se crea y se cierra solamente
-                 * para preparar sus elementos.
+                 * Ya no creamos el editor de flecha al cargar.
+                 * Solo se crea cuando realmente se usa SEÑALAR.
                  */
-
-                crearEditorFlechaDOM();
-
-                cerrarEditorFlecha();
 
                 modeBadge.textContent =
                     modo === 'medir'
