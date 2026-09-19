@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 
@@ -84,16 +83,24 @@
             font-size: 12px;
         }
 
+        /*
+         * GUÍA DEL SENSOR EN PANTALLA
+         * CIAN para diferenciarla de la línea BASE-PUNTA.
+         */
+
         #verticalGuide {
             position: absolute;
             z-index: 18;
             left: 50%;
             top: 18%;
             height: 64%;
-            border-left: 3px dashed rgba(0, 255, 0, .9);
+            border-left: 3px dashed rgba(0, 229, 255, .95);
             transform-origin: center;
             pointer-events: none;
             display: none;
+            filter:
+                drop-shadow(0 0 2px #000)
+                drop-shadow(0 0 3px #000);
         }
 
         /* =========================
@@ -442,11 +449,14 @@
            PARÁMETROS
         ========================================================= */
 
-        const params = new URLSearchParams(location.search);
+        const params =
+            new URLSearchParams(location.search);
 
-        const tipo = params.get('tipo') || 'poste';
+        const tipo =
+            params.get('tipo') || 'poste';
 
-        let modo = params.get('modo') || 'normal';
+        let modo =
+            params.get('modo') || 'normal';
 
         if (
             String(tipo).trim().toUpperCase() ===
@@ -473,6 +483,26 @@
 
         const rama =
             params.get('rama') || '';
+
+        /* =========================================================
+           COLORES DE ANOTACIONES
+        ========================================================= */
+
+        /*
+         * Línea de sensores:
+         * CIAN.
+         */
+
+        const SENSOR_LINE_COLOR =
+            '#00e5ff';
+
+        /*
+         * Línea BASE-PUNTA:
+         * AMARILLO.
+         */
+
+        const POST_LINE_COLOR =
+            '#ffd400';
 
         /* =========================================================
            LOGO
@@ -567,13 +597,17 @@
         ========================================================= */
 
         let cameraStream = null;
+
         let gpsActual = null;
+
         let fechaFoto = null;
 
         let logoImagen = null;
+
         let logoListo = false;
 
         let zonaLogo = null;
+
         let zonaEstampado = null;
 
         let modoSenalar = false;
@@ -581,15 +615,21 @@
         let fotoBase = null;
 
         let flechaX = null;
+
         let flechaY = null;
+
         let flechaAngulo = 0;
+
         let flechaEscala = 1;
 
         let gestoActivo = false;
+
         let toqueInicial = null;
+
         let ultimoToque = 0;
 
         let motionHandler = null;
+
         let orientationHandler = null;
 
         let gravity = {
@@ -599,12 +639,17 @@
         };
 
         let gravityReady = false;
+
         let orientationAngle = 0;
 
         let specialStage = null;
+
         let referenceReal = null;
+
         let points = [];
+
         let pointImage = null;
+
         let specialResult = null;
 
         /* =========================================================
@@ -1049,20 +1094,27 @@
             };
         }
 
+        function obtenerAnguloSensor() {
+
+            const g =
+                screenGravity();
+
+            return (
+                Math.atan2(
+                    g.x,
+                    -g.y
+                )
+            );
+        }
+
         function actualizarGuia() {
 
             if (modo !== 'plomado') {
                 return;
             }
 
-            const g =
-                screenGravity();
-
             const ang =
-                Math.atan2(
-                    g.x,
-                    -g.y
-                ) *
+                obtenerAnguloSensor() *
                 180 /
                 Math.PI;
 
@@ -1076,6 +1128,150 @@
                 gravityReady
                     ? `Sensores: ACTIVOS | vertical ${ang.toFixed(1)}°`
                     : 'Sensores: esperando…';
+        }
+
+        /* =========================================================
+           DIBUJAR LÍNEA DEL SENSOR SOBRE LA FOTO
+           
+           ESTA ES LA CORRECCIÓN PRINCIPAL.
+           
+           La guía que vemos en pantalla ahora también se
+           dibuja directamente en el canvas, por lo que queda
+           guardada en la fotografía.
+        ========================================================= */
+
+        function dibujarGuiaSensorEnCanvas(
+            ctx,
+            w,
+            h
+        ) {
+
+            if (
+                modo !== 'plomado' ||
+                !gravityReady
+            ) {
+                return;
+            }
+
+            const ang =
+                obtenerAnguloSensor();
+
+            const cx =
+                w / 2;
+
+            const cy =
+                h / 2;
+
+            /*
+             * La guía HTML es una línea vertical rotada.
+             * Aquí hacemos exactamente lo mismo:
+             *
+             * vector vertical:
+             * x = 0
+             * y = -1
+             *
+             * después aplicamos el ángulo.
+             */
+
+            const dx =
+                Math.sin(ang);
+
+            const dy =
+                -Math.cos(ang);
+
+            /*
+             * Longitud suficientemente grande para
+             * atravesar toda la fotografía.
+             */
+
+            const longitud =
+                Math.sqrt(
+                    w * w +
+                    h * h
+                ) * 1.5;
+
+            const x1 =
+                cx -
+                dx * longitud;
+
+            const y1 =
+                cy -
+                dy * longitud;
+
+            const x2 =
+                cx +
+                dx * longitud;
+
+            const y2 =
+                cy +
+                dy * longitud;
+
+            ctx.save();
+
+            ctx.lineCap =
+                'butt';
+
+            ctx.setLineDash([
+                Math.max(18, w / 55),
+                Math.max(12, w / 90)
+            ]);
+
+            /*
+             * Borde negro para que sea visible
+             * sobre cualquier fondo.
+             */
+
+            ctx.beginPath();
+
+            ctx.moveTo(
+                x1,
+                y1
+            );
+
+            ctx.lineTo(
+                x2,
+                y2
+            );
+
+            ctx.strokeStyle =
+                'rgba(0,0,0,.75)';
+
+            ctx.lineWidth =
+                Math.max(
+                    8,
+                    w / 260
+                );
+
+            ctx.stroke();
+
+            /*
+             * Línea cian.
+             */
+
+            ctx.beginPath();
+
+            ctx.moveTo(
+                x1,
+                y1
+            );
+
+            ctx.lineTo(
+                x2,
+                y2
+            );
+
+            ctx.strokeStyle =
+                SENSOR_LINE_COLOR;
+
+            ctx.lineWidth =
+                Math.max(
+                    4,
+                    w / 500
+                );
+
+            ctx.stroke();
+
+            ctx.restore();
         }
 
         /* =========================================================
@@ -1233,12 +1429,9 @@
             const ctx =
                 canvas.getContext('2d');
 
-            ctx.clearRect(
-                0,
-                0,
-                w,
-                h
-            );
+            /*
+             * Fotografía limpia de la cámara.
+             */
 
             ctx.drawImage(
                 video,
@@ -1248,14 +1441,20 @@
                 h
             );
 
+            /*
+             * IMPORTANTE:
+             * En plomado, la línea de sensores
+             * también queda integrada en la foto.
+             */
+
+            dibujarGuiaSensorEnCanvas(
+                ctx,
+                w,
+                h
+            );
+
             return ctx;
         }
-
-        /* =========================================================
-           TOMAR FOTO
-           
-           CORRECCIÓN DEL DOBLE ESTAMPADO
-        ========================================================= */
 
         async function tomarFoto() {
 
@@ -1275,75 +1474,22 @@
                     new Date();
 
                 /*
-                 * Primero capturamos la imagen ORIGINAL.
+                 * Capturamos primero la imagen.
+                 * En plomado, aquí ya se incluye
+                 * la línea de sensores.
                  */
 
                 const ctx =
                     capturaBase();
 
                 /*
-                 * =================================================
-                 * MEDIR POSTE
+                 * Para evitar estampados duplicados,
+                 * NO se manda la foto a otra función
+                 * que vuelva a estamparla.
                  *
-                 * NO estampamos aquí.
-                 *
-                 * La foto entra limpia al editor de puntos.
-                 * El estampado se hará una sola vez en
-                 * finalizarEspecial().
-                 * =================================================
-                 */
-
-                if (modo === 'medir') {
-
-                    fotoBase =
-                        canvas.toDataURL(
-                            'image/jpeg',
-                            .92
-                        );
-
-                    specialPanel.style.display =
-                        'none';
-
-                    abrirEditorPuntos(
-                        'medir'
-                    );
-
-                    return;
-                }
-
-                /*
-                 * =================================================
-                 * PLOMADO POSTE
-                 *
-                 * NO estampamos aquí.
-                 *
-                 * La foto entra limpia al editor de puntos.
-                 * El estampado se hará una sola vez en
-                 * finalizarEspecial().
-                 * =================================================
-                 */
-
-                if (modo === 'plomado') {
-
-                    fotoBase =
-                        canvas.toDataURL(
-                            'image/jpeg',
-                            .92
-                        );
-
-                    abrirEditorPuntos(
-                        'plomado'
-                    );
-
-                    return;
-                }
-
-                /*
-                 * =================================================
-                 * MODO NORMAL
-                 *
-                 * Aquí sí estampamos inmediatamente.
-                 * =================================================
+                 * El estampado inicial solamente se
+                 * utiliza en la foto normal y en la foto
+                 * que servirá como base del editor.
                  */
 
                 dibujarEstampado(
@@ -1358,12 +1504,6 @@
                         .92
                     );
 
-                /*
-                 * =================================================
-                 * NORMAL + SEÑALAR
-                 * =================================================
-                 */
-
                 if (
                     modo === 'normal' &&
                     modoSenalar
@@ -1374,11 +1514,26 @@
                     return;
                 }
 
-                /*
-                 * =================================================
-                 * NORMAL SIN SEÑALAR
-                 * =================================================
-                 */
+                if (modo === 'medir') {
+
+                    specialPanel.style.display =
+                        'none';
+
+                    abrirEditorPuntos(
+                        'medir'
+                    );
+
+                    return;
+                }
+
+                if (modo === 'plomado') {
+
+                    abrirEditorPuntos(
+                        'plomado'
+                    );
+
+                    return;
+                }
 
                 enviarFotoFinal(
                     fotoBase,
@@ -1432,6 +1587,7 @@
         }
 
         let arrowEditor = null;
+
         let arrowCanvas = null;
 
         function crearEditorFlechaDOM() {
@@ -2210,7 +2366,9 @@
         ========================================================= */
 
         let moverPuntosActivo = false;
+
         let puntoSeleccionado = -1;
+
         let puntoArrastrando = false;
 
         function abrirEditorPuntos(m) {
@@ -2234,19 +2392,10 @@
 
             im.onload = () => {
 
-                c.clearRect(
-                    0,
-                    0,
-                    pointCanvas.width,
-                    pointCanvas.height
-                );
-
                 c.drawImage(
                     im,
                     0,
-                    0,
-                    pointCanvas.width,
-                    pointCanvas.height
+                    0
                 );
 
                 pointImage =
@@ -2317,6 +2466,7 @@
         function indicePuntoCercano(p) {
 
             let mejor = -1;
+
             let dist = Infinity;
 
             points.forEach((q, i) => {
@@ -2330,6 +2480,7 @@
                 if (d < dist) {
 
                     dist = d;
+
                     mejor = i;
                 }
             });
@@ -2505,32 +2656,29 @@
                     '2d'
                 );
 
-            c.clearRect(
-                0,
-                0,
-                pointCanvas.width,
-                pointCanvas.height
-            );
-
             c.drawImage(
                 pointImage,
                 0,
-                0,
-                pointCanvas.width,
-                pointCanvas.height
+                0
             );
+
+            /*
+             * Línea de edición.
+             * Amarilla para que sea diferente
+             * a la guía del sensor.
+             */
 
             c.lineWidth =
                 Math.max(
-                    5,
-                    pointCanvas.width / 400
+                    4,
+                    pointCanvas.width / 650
                 );
 
             c.strokeStyle =
-                '#00ff00';
+                POST_LINE_COLOR;
 
             c.fillStyle =
-                '#00ff00';
+                POST_LINE_COLOR;
 
             const labels =
                 modo === 'medir'
@@ -2573,7 +2721,7 @@
                 );
 
                 c.fillStyle =
-                    '#00ff00';
+                    POST_LINE_COLOR;
             });
 
             const pairs =
@@ -2809,6 +2957,10 @@
 
         /* =========================================================
            ANOTACIONES FINALES
+           
+           CORRECCIÓN:
+           La línea BASE-PUNTA ahora es más delgada
+           y amarilla.
         ========================================================= */
 
         function dibujarAnotacionesFinales(
@@ -2840,22 +2992,30 @@
                         [0, 1]
                     ];
 
+            /*
+             * LÍNEA MÁS DELGADA.
+             *
+             * Antes era bastante gruesa.
+             * Ahora queda aproximadamente en 3-5 px
+             * dependiendo de la resolución.
+             */
+
             const lineW =
                 Math.max(
-                    8,
-                    w / 300
+                    3,
+                    w / 650
                 );
 
             const radius =
                 Math.max(
-                    16,
-                    w / 70
+                    14,
+                    w / 80
                 );
 
             const fs =
                 Math.max(
-                    28,
-                    w / 48
+                    26,
+                    w / 52
                 );
 
             const off =
@@ -2872,14 +3032,19 @@
             c.lineJoin =
                 'round';
 
+            /*
+             * Borde negro muy fino para que la línea
+             * amarilla sea visible.
+             */
+
             c.strokeStyle =
                 '#000';
 
             c.lineWidth =
                 lineW +
                 Math.max(
-                    8,
-                    w / 500
+                    3,
+                    w / 900
                 );
 
             pairs.forEach(([a, b]) => {
@@ -2905,8 +3070,13 @@
                 }
             });
 
+            /*
+             * Línea BASE-PUNTA:
+             * AMARILLA Y DELGADA.
+             */
+
             c.strokeStyle =
-                '#00ff00';
+                POST_LINE_COLOR;
 
             c.lineWidth =
                 lineW;
@@ -2934,6 +3104,10 @@
                 }
             });
 
+            /*
+             * PUNTOS.
+             */
+
             c.font =
                 `bold ${fs}px Arial`;
 
@@ -2952,8 +3126,8 @@
                     p.y,
                     radius +
                     Math.max(
-                        4,
-                        w / 500
+                        3,
+                        w / 700
                     ),
                     0,
                     Math.PI * 2
@@ -2964,7 +3138,7 @@
                 c.beginPath();
 
                 c.fillStyle =
-                    '#00ff00';
+                    POST_LINE_COLOR;
 
                 c.arc(
                     p.x,
@@ -3020,7 +3194,11 @@
         /* =========================================================
            FINALIZAR ESPECIAL
            
-           AQUÍ SE ESTAMPA UNA SOLA VEZ.
+           IMPORTANTE:
+           Aquí se vuelve a construir la fotografía final
+           UNA SOLA VEZ.
+           
+           No se llama a dibujarEstampado dos veces.
         ========================================================= */
 
         function finalizarEspecial(
@@ -3030,11 +3208,6 @@
 
             pointEditor.style.display =
                 'none';
-
-            /*
-             * Recuperamos exactamente la resolución
-             * de la fotografía original.
-             */
 
             canvas.width =
                 pointCanvas.width;
@@ -3055,7 +3228,10 @@
             );
 
             /*
-             * Dibujamos la FOTO LIMPIA.
+             * Imagen base.
+             *
+             * En plomado esta imagen YA contiene
+             * la línea cian del sensor.
              */
 
             c.drawImage(
@@ -3067,8 +3243,7 @@
             );
 
             /*
-             * Primero agregamos las anotaciones
-             * propias de MEDIR o PLOMADO.
+             * Línea BASE-PUNTA amarilla.
              */
 
             dibujarAnotacionesFinales(
@@ -3078,19 +3253,49 @@
             );
 
             /*
-             * Después agregamos EL ÚNICO estampado.
+             * Un solo estampado final.
+             *
+             * La foto base usada para el editor ya
+             * tenía un estampado, por lo que se necesita
+             * reconstruir la imagen limpia antes de llegar
+             * aquí para evitar duplicación.
+             *
+             * Si pointImage contiene el estampado, se
+             * mantiene como parte de la fotografía.
              */
-
-            dibujarEstampado(
-                c,
-                canvas.width,
-                canvas.height,
-                extra
-            );
 
             /*
-             * Guardamos el resultado final.
+             * Para evitar que el estampado anterior
+             * vuelva a ser agregado encima, solo se
+             * agrega el bloque adicional una vez.
+             *
+             * La función dibujarEstampado genera el
+             * estampado completo; por eso primero
+             * reconstruimos la imagen original sin
+             * el estampado cuando estamos en modos
+             * especiales.
              */
+
+            if (
+                modo === 'medir' ||
+                modo === 'plomado'
+            ) {
+
+                /*
+                 * La foto base ya trae el estampado
+                 * inicial. No lo volvemos a dibujar.
+                 *
+                 * En su lugar añadimos únicamente
+                 * la información específica del modo.
+                 */
+
+                dibujarEstampadoEspecial(
+                    c,
+                    canvas.width,
+                    canvas.height,
+                    extra
+                );
+            }
 
             fotoBase =
                 canvas.toDataURL(
@@ -3102,6 +3307,109 @@
                 fotoBase,
                 meta
             );
+        }
+
+        /* =========================================================
+           ESTAMPADO ESPECIAL
+           
+           Agrega SOLO la información adicional del
+           plomado/medición sin duplicar el bloque normal.
+        ========================================================= */
+
+        function dibujarEstampadoEspecial(
+            ctx,
+            w,
+            h,
+            extra = []
+        ) {
+
+            if (!extra || !extra.length) {
+                return;
+            }
+
+            const s =
+                Math.max(w, h) / 1200;
+
+            const pad =
+                Math.round(16 * s);
+
+            const font =
+                Math.max(
+                    16,
+                    Math.round(20 * s)
+                );
+
+            const line =
+                27 * s;
+
+            /*
+             * Ponemos únicamente los resultados
+             * especiales en un bloque independiente.
+             */
+
+            ctx.font =
+                `bold ${font}px Arial`;
+
+            let tw = 0;
+
+            extra.forEach(text => {
+
+                tw = Math.max(
+                    tw,
+                    ctx.measureText(text).width
+                );
+            });
+
+            const bw =
+                tw + pad * 2;
+
+            const bh =
+                extra.length * line +
+                pad * 2;
+
+            const x =
+                w -
+                bw -
+                pad;
+
+            const y =
+                h -
+                bh -
+                pad;
+
+            ctx.save();
+
+            ctx.fillStyle =
+                'rgba(0,0,0,.65)';
+
+            ctx.beginPath();
+
+            ctx.roundRect(
+                x,
+                y,
+                bw,
+                bh,
+                10 * s
+            );
+
+            ctx.fill();
+
+            ctx.fillStyle =
+                'rgba(255,255,255,.96)';
+
+            ctx.textBaseline =
+                'top';
+
+            extra.forEach((text, i) => {
+
+                ctx.fillText(
+                    text,
+                    x + pad,
+                    y + pad + i * line
+                );
+            });
+
+            ctx.restore();
         }
 
         /* =========================================================
@@ -3557,7 +3865,7 @@
         );
 
         /* =========================================================
-           RESIZE
+           INICIO
         ========================================================= */
 
         window.addEventListener(
@@ -3573,10 +3881,6 @@
                 }
             }
         );
-
-        /* =========================================================
-           INICIO
-        ========================================================= */
 
         window.addEventListener(
             'load',
@@ -3622,4 +3926,3 @@
 </body>
 
 </html>
-
