@@ -1353,10 +1353,17 @@ async function tomarFoto(){
 
     try{
 
-        if(!cameraStream)
-            throw new Error(
-                'La cámara no está iniciada.'
-            );
+        if(!cameraStream){
+
+    setStatus(
+        '📷 Abriendo cámara…'
+    );
+
+    await iniciarCamara();
+
+    if(!cameraStream)
+        return;
+}
 
         gpsActual=await obtenerGPS();
         fechaFoto=new Date();
@@ -3840,6 +3847,7 @@ if(screen.orientation){
    INICIO
 ========================================================= */
 
+```js
 window.addEventListener(
     'load',
     async()=>{
@@ -3857,6 +3865,14 @@ window.addEventListener(
 
             specialHelp.textContent=
                 'Captura la medida real del objeto conocido. Después pulsa CONTINUAR, toma la foto y marca R1, R2, BASE y PUNTA.';
+
+            setStatus(
+                'Abriendo cámara…'
+            );
+
+            await iniciarCamara();
+
+            return;
         }
 
         if(modo==='plomado'){
@@ -3864,16 +3880,31 @@ window.addEventListener(
             plomadoOverlay.style.display='block';
             plomadoActivo=true;
 
+            setStatus(
+                'Abriendo cámara…'
+            );
+
+            await iniciarCamara();
+
             dibujarTransportador();
+
+            return;
         }
 
-        setStatus(
-            'Abriendo cámara…'
-        );
+        /*
+           FOTO NORMAL:
+           NO abrir cámara al cargar.
+        */
 
-        await iniciarCamara();
+        specialPanel.style.display='none';
+
+        setStatus(
+            '📷 Listo. Pulsa FOTO para abrir la cámara.'
+        );
     }
 );
+```
+
 
 </script>
 
