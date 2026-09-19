@@ -1274,125 +1274,199 @@
            - plomado: en finalizarEspecial()
         ========================================================= */
 
-        async function tomarFoto() {
+        ```javascript
+async function tomarFoto() {
 
-            try {
+    try {
 
-                if (!cameraStream) {
+        if (!cameraStream) {
 
-                    throw new Error(
-                        'La cámara no está iniciada.'
-                    );
-                }
-
-                gpsActual =
-                    await obtenerGPS();
-
-                fechaFoto =
-                    new Date();
-
-                /*
-                 * Capturamos únicamente la fotografía.
-                 */
-                capturaBase();
-
-                /*
-                 * fotoBase es ahora una fotografía limpia.
-                 */
-                fotoBase =
-                    canvas.toDataURL(
-                        'image/jpeg',
-                        .92
-                    );
-
-                if (
-                    modo === 'normal' &&
-                    modoSenalar
-                ) {
-
-                    abrirEditorFlecha();
-
-                    return;
-                }
-
-                if (modo === 'medir') {
-
-                    specialPanel.style.display =
-                        'none';
-
-                    abrirEditorPuntos(
-                        'medir'
-                    );
-
-                    return;
-                }
-
-                if (modo === 'plomado') {
-
-                    abrirEditorPuntos(
-                        'plomado'
-                    );
-
-                    return;
-                }
-
-                /*
-                 * Modo normal sin señalar:
-                 * aquí sí se agrega el estampado una sola vez.
-                 */
-                const ctx =
-                    canvas.getContext('2d');
-
-                ctx.clearRect(
-                    0,
-                    0,
-                    canvas.width,
-                    canvas.height
-                );
-
-                const im =
-                    new Image();
-
-                im.onload = () => {
-
-                    ctx.drawImage(
-                        im,
-                        0,
-                        0,
-                        canvas.width,
-                        canvas.height
-                    );
-
-                    dibujarEstampado(
-                        ctx,
-                        canvas.width,
-                        canvas.height
-                    );
-
-                    enviarFotoFinal(
-                        canvas.toDataURL(
-                            'image/jpeg',
-                            .92
-                        ),
-                        {
-                            modo: 'normal'
-                        }
-                    );
-                };
-
-                im.src =
-                    fotoBase;
-
-            } catch (e) {
-
-                console.error(e);
-
-                setStatus(
-                    '❌ ERROR AL TOMAR FOTO\n' +
-                    e.message
-                );
-            }
+            throw new Error(
+                'La cámara no está iniciada.'
+            );
         }
+
+        gpsActual =
+            await obtenerGPS();
+
+        fechaFoto =
+            new Date();
+
+        /*
+         * =====================================================
+         * CAPTURA DE LA FOTO ORIGINAL
+         *
+         * IMPORTANTE:
+         * Aquí NO estampamos todavía.
+         *
+         * En MEDIR y PLOMADO la foto debe llegar limpia
+         * al editor de puntos.
+         *
+         * El estampado se hará UNA SOLA VEZ al finalizar.
+         * =====================================================
+         */
+
+        const w =
+            video.videoWidth;
+
+        const h =
+            video.videoHeight;
+
+        if (!w || !h) {
+
+            throw new Error(
+                'La cámara todavía no está lista.'
+            );
+        }
+
+        canvas.width = w;
+        canvas.height = h;
+
+        const ctx =
+            canvas.getContext('2d');
+
+        ctx.clearRect(
+            0,
+            0,
+            w,
+            h
+        );
+
+        ctx.drawImage(
+            video,
+            0,
+            0,
+            w,
+            h
+        );
+
+        /*
+         * =====================================================
+         * MEDIR POSTE
+         *
+         * Guardamos la foto SIN estampado.
+         * finalizarEspecial() será quien agregue:
+         *
+         * - R1
+         * - R2
+         * - BASE
+         * - PUNTA
+         * - REF
+         * - ALTURA POSTE
+         * - estampado general
+         * - logo
+         *
+         * TODO UNA SOLA VEZ.
+         * =====================================================
+         */
+
+        if (modo === 'medir') {
+
+            fotoBase =
+                canvas.toDataURL(
+                    'image/jpeg',
+                    .92
+                );
+
+            specialPanel.style.display =
+                'none';
+
+            abrirEditorPuntos(
+                'medir'
+            );
+
+            return;
+        }
+
+        /*
+         * =====================================================
+         * PLOMADO POSTE
+         *
+         * Igual que medición:
+         * guardamos la fotografía SIN estampado.
+         *
+         * finalizarEspecial() hará el estampado final
+         * una sola vez.
+         * =====================================================
+         */
+
+        if (modo === 'plomado') {
+
+            fotoBase =
+                canvas.toDataURL(
+                    'image/jpeg',
+                    .92
+                );
+
+            abrirEditorPuntos(
+                'plomado'
+            );
+
+            return;
+        }
+
+        /*
+         * =====================================================
+         * MODO NORMAL
+         *
+         * En modo normal sí estampamos inmediatamente.
+         * Esto es necesario porque el editor de flecha
+         * trabaja sobre la fotografía ya estampada.
+         * =====================================================
+         */
+
+        dibujarEstampado(
+            ctx,
+            canvas.width,
+            canvas.height
+        );
+
+        fotoBase =
+            canvas.toDataURL(
+                'image/jpeg',
+                .92
+            );
+
+        /*
+         * =====================================================
+         * MODO NORMAL + SEÑALAR
+         * =====================================================
+         */
+
+        if (
+            modo === 'normal' &&
+            modoSenalar
+        ) {
+
+            abrirEditorFlecha();
+
+            return;
+        }
+
+        /*
+         * =====================================================
+         * FOTO NORMAL SIN SEÑALAR
+         * =====================================================
+         */
+
+        enviarFotoFinal(
+            fotoBase,
+            {
+                modo: 'normal'
+            }
+        );
+
+    } catch (e) {
+
+        console.error(e);
+
+        setStatus(
+            '❌ ERROR AL TOMAR FOTO\n' +
+            e.message
+        );
+    }
+}
+```
 
         /* =========================================================
            EDITOR DE FLECHA
