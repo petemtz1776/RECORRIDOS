@@ -464,6 +464,16 @@ button:disabled{
 <script>
 'use strict';
 
+console.log('CAMERA STAMP: JS INICIADO');
+
+window.addEventListener('error', function(e){
+    console.error('CAMERA STAMP ERROR:', e.error || e.message);
+});
+
+window.addEventListener('unhandledrejection', function(e){
+    console.error('CAMERA STAMP PROMISE ERROR:', e.reason);
+});
+    
 /* =========================================================
    PARAMETROS
 ========================================================= */
