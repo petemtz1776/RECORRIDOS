@@ -1214,37 +1214,111 @@
            CAPTURA BASE
         ========================================================= */
 
-        function capturaBase() {
+       ```javascript
+function capturaBase() {
 
-    const w =
-        video.videoWidth;
+    const videoW = video.videoWidth;
+    const videoH = video.videoHeight;
 
-    const h =
-        video.videoHeight;
-
-    if (!w || !h) {
+    if (!videoW || !videoH) {
 
         throw new Error(
             'La cámara todavía no está lista.'
         );
     }
 
-    canvas.width = w;
-    canvas.height = h;
+    const container =
+        document.getElementById(
+            'cameraContainer'
+        );
+
+    const containerW =
+        container.clientWidth;
+
+    const containerH =
+        container.clientHeight;
+
+    /*
+     * El <video> utiliza object-fit: cover.
+     *
+     * Por lo tanto debemos calcular exactamente
+     * qué parte del frame está siendo visible
+     * en pantalla y capturar solamente esa parte.
+     */
+
+    const videoRatio =
+        videoW / videoH;
+
+    const containerRatio =
+        containerW / containerH;
+
+    let sx = 0;
+    let sy = 0;
+    let sw = videoW;
+    let sh = videoH;
+
+    if (videoRatio > containerRatio) {
+
+        /*
+         * El video es más ancho que la pantalla.
+         * Se recortan los lados.
+         */
+
+        sw =
+            videoH *
+            containerRatio;
+
+        sx =
+            (videoW - sw) / 2;
+
+    } else {
+
+        /*
+         * El video es más alto que la pantalla.
+         * Se recortan arriba y abajo.
+         */
+
+        sh =
+            videoW /
+            containerRatio;
+
+        sy =
+            (videoH - sh) / 2;
+    }
+
+    /*
+     * Ahora el canvas tendrá exactamente
+     * la misma proporción que lo visible
+     * en pantalla.
+     */
+
+    canvas.width =
+        Math.round(sw);
+
+    canvas.height =
+        Math.round(sh);
 
     const ctx =
         canvas.getContext('2d');
 
     ctx.drawImage(
         video,
+
+        sx,
+        sy,
+        sw,
+        sh,
+
         0,
         0,
-        w,
-        h
+        canvas.width,
+        canvas.height
     );
 
     return ctx;
 }
+```
+
         async function tomarFoto() {
 
             try {
