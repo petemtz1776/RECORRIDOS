@@ -1,312 +1,215 @@
 <!DOCTYPE html>
 
 <html lang="es">
-
 <head>
-    <meta charset="UTF-8">
-
-```
-<meta
-    name="viewport"
-    content="width=device-width,initial-scale=1,viewport-fit=cover"
->
-
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>PETES CAMERA STAMP</title>
 
 <style>
-    * {
-        box-sizing: border-box;
-    }
+*{box-sizing:border-box}
+html,body{
+    margin:0;width:100%;height:100%;
+    background:#000;color:#fff;
+    font-family:Arial,sans-serif;
+    overflow:hidden;
+}
+#cameraContainer{
+    position:relative;width:100%;height:100dvh;
+    max-width:900px;margin:auto;
+    background:#000;overflow:hidden;
+}
+#video{
+    position:absolute;inset:0;
+    width:100%;height:100%;
+    object-fit:cover;background:#000;
+}
+#canvas,#workCanvas{display:none}
 
-    html,
-    body {
-        margin: 0;
-        width: 100%;
-        height: 100%;
-        background: #000;
-        color: #fff;
-        font-family: Arial, sans-serif;
-        overflow: hidden;
-    }
+#hud{
+    position:absolute;top:0;left:0;right:0;
+    z-index:20;padding:8px;
+    pointer-events:none;
+}
+#modeBadge{
+    display:inline-block;
+    background:rgba(0,0,0,.72);
+    padding:8px 10px;border-radius:8px;
+    font-weight:bold;font-size:13px;
+}
+#sensorHud{
+    margin-top:6px;display:inline-block;
+    background:rgba(0,0,0,.62);
+    padding:7px 10px;border-radius:8px;
+    font-size:12px;
+}
 
-    #cameraContainer {
-        position: relative;
-        width: 100%;
-        height: 100dvh;
-        max-width: 1200px;
-        margin: auto;
-        background: #000;
-        overflow: hidden;
-    }
+/* ================= PLOMADO ================= */
 
-    #video {
-        position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        background: #000;
-    }
+#plomadoOverlay{
+    position:absolute;z-index:18;inset:0;
+    pointer-events:none;display:none;
+}
+#plomadoCanvas{
+    position:absolute;inset:0;
+    width:100%;height:100%;display:block;
+}
+#plomadoReading{
+    position:absolute;z-index:19;
+    top:30%;left:50%;
+    transform:translateX(-50%);
+    background:rgba(0,0,0,.72);
+    border:2px solid rgba(255,255,255,.75);
+    border-radius:12px;padding:8px 15px;
+    font-size:22px;font-weight:bold;
+    white-space:nowrap;text-align:center;
+}
+#plomadoHelp{
+    position:absolute;z-index:19;
+    top:37%;left:50%;
+    transform:translateX(-50%);
+    background:rgba(0,0,0,.58);
+    border-radius:8px;padding:6px 10px;
+    font-size:12px;white-space:nowrap;
+}
 
-    #canvas,
-    #workCanvas {
-        display: none;
-    }
+/* ================= CONTROLES ================= */
 
-    /* =====================================================
-       HUD
-       ===================================================== */
+#controls{
+    position:absolute;z-index:30;
+    left:0;right:0;bottom:0;
+    padding:9px 7px calc(9px + env(safe-area-inset-bottom));
+    display:flex;flex-wrap:wrap;
+    justify-content:center;gap:6px;
+    background:linear-gradient(transparent,rgba(0,0,0,.96));
+}
+button,input{font:inherit}
+button{
+    border:0;border-radius:8px;
+    padding:11px 13px;min-height:46px;
+    font-weight:bold;cursor:pointer;
+}
+button:disabled{opacity:.45}
+#takeButton{background:#4caf50;color:#fff}
+#signalButton{background:#ff9800;color:#fff}
+#confirmButton{background:#4caf50;color:#fff;display:none}
+#cancelSignalButton{background:#f44336;color:#fff;display:none}
+#cancelButton{background:#b71c1c;color:#fff}
 
-    #hud {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        z-index: 20;
-        padding: 8px;
-        pointer-events: none;
-    }
+/* ================= PANEL ================= */
 
-    #modeBadge {
-        display: inline-block;
-        background: rgba(0, 0, 0, .72);
-        padding: 8px 10px;
-        border-radius: 8px;
-        font-weight: bold;
-        font-size: 13px;
-    }
+#specialPanel{
+    position:absolute;z-index:40;
+    left:8px;right:8px;top:76px;
+    background:rgba(0,0,0,.82);
+    padding:12px;border-radius:10px;
+    display:none;pointer-events:auto;
+}
+#specialPanel label{
+    display:block;font-size:13px;
+    font-weight:bold;margin-bottom:5px;
+}
+#knownMeasure{
+    width:100%;padding:10px;
+    border-radius:7px;border:1px solid #777;
+    background:#fff;color:#000;
+    font-size:17px;margin-bottom:7px;
+}
+#specialHelp{font-size:13px;line-height:1.35}
+#measureStart{
+    margin-top:8px;background:#1565c0;
+    color:#fff;width:100%;
+}
 
-    #sensorHud {
-        margin-top: 6px;
-        display: inline-block;
-        background: rgba(0, 0, 0, .62);
-        padding: 7px 10px;
-        border-radius: 8px;
-        font-size: 12px;
-    }
+/* ================= EDITOR ================= */
 
-    /* =====================================================
-       PLOMADO
-       ===================================================== */
+.measureEditor{
+    position:absolute;inset:0;
+    z-index:50;background:#000;
+    overflow:hidden;
+    touch-action:none;
+}
+.measureCanvas{
+    position:absolute;
+    display:block;
+    touch-action:none;
+}
 
-    #plomadoOverlay {
-        position: absolute;
-        inset: 0;
-        z-index: 18;
-        pointer-events: none;
-        display: none;
-    }
+/* ================= PUNTOS MEDICION ================= */
 
-    #plomadoCanvas {
-        position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        display: block;
-    }
+.measurePoint{
+    position:absolute;
+    width:34px;height:34px;
+    margin:-17px 0 0 -17px;
+    border-radius:50%;
+    border:3px solid #fff;
+    box-shadow:0 0 0 3px rgba(0,0,0,.7);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:bold;
+    font-size:13px;
+    pointer-events:none;
+}
+.measurePoint.r1{background:#ff9800}
+.measurePoint.r2{background:#9c27b0}
+.measurePoint.base{background:#00aaff}
+.measurePoint.punta{background:#00c853}
 
-    #plomadoReading {
-        position: absolute;
-        z-index: 19;
-        top: 43%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: rgba(0, 0, 0, .72);
-        border: 2px solid rgba(255, 255, 255, .8);
-        border-radius: 12px;
-        padding: 8px 15px;
-        font-size: 22px;
-        font-weight: bold;
-        white-space: nowrap;
-        text-align: center;
-    }
+.measureToolbar{
+    position:absolute;
+    z-index:60;
+    left:8px;right:8px;
+    bottom:8px;
+    background:rgba(0,0,0,.82);
+    border-radius:12px;
+    padding:8px;
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:5px;
+}
+.measureToolbar button{
+    min-height:42px;
+    padding:9px 11px;
+}
+#measureFinish{background:#4caf50;color:#fff}
+#measureUndo{background:#607d8b;color:#fff}
+#measureCancel{background:#b71c1c;color:#fff}
+.measureInstruction{
+    position:absolute;
+    z-index:60;
+    top:8px;left:8px;right:8px;
+    background:rgba(0,0,0,.78);
+    border-radius:9px;
+    padding:9px;
+    text-align:center;
+    font-size:13px;
+}
 
-    #plomadoHelp {
-        position: absolute;
-        z-index: 19;
-        top: calc(43% + 42px);
-        left: 50%;
-        transform: translateX(-50%);
-        background: rgba(0, 0, 0, .58);
-        border-radius: 8px;
-        padding: 6px 10px;
-        font-size: 12px;
-        white-space: nowrap;
-    }
+/* ================= STATUS ================= */
 
-    /* =====================================================
-       CONTROLES
-       ===================================================== */
+#status{
+    position:absolute;z-index:60;
+    left:8px;right:8px;bottom:88px;
+    background:rgba(0,0,0,.7);
+    padding:8px;border-radius:8px;
+    font-size:12px;
+    white-space:pre-line;
+    pointer-events:none;
+}
+#preview{
+    display:none;
+    max-width:100%;max-height:100%;
+    margin:auto;
+}
 
-    #controls {
-        position: absolute;
-        z-index: 30;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        padding: 9px 7px calc(9px + env(safe-area-inset-bottom));
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 6px;
-        background: linear-gradient(
-            transparent,
-            rgba(0, 0, 0, .96)
-        );
-    }
-
-    button,
-    input {
-        font: inherit;
-    }
-
-    button {
-        border: 0;
-        border-radius: 8px;
-        padding: 11px 13px;
-        min-height: 46px;
-        font-weight: bold;
-        cursor: pointer;
-    }
-
-    button:disabled {
-        opacity: .45;
-    }
-
-    #takeButton {
-        background: #4caf50;
-        color: #fff;
-    }
-
-    #signalButton {
-        background: #ff9800;
-        color: #fff;
-    }
-
-    #confirmButton {
-        background: #4caf50;
-        color: #fff;
-        display: none;
-    }
-
-    #cancelSignalButton {
-        background: #f44336;
-        color: #fff;
-        display: none;
-    }
-
-    #cancelButton {
-        background: #b71c1c;
-        color: #fff;
-    }
-
-    /* =====================================================
-       PANEL MEDICIÓN
-       ===================================================== */
-
-    #specialPanel {
-        position: absolute;
-        z-index: 40;
-        left: 8px;
-        right: 8px;
-        top: 76px;
-        background: rgba(0, 0, 0, .82);
-        padding: 12px;
-        border-radius: 10px;
-        display: none;
-        pointer-events: auto;
-    }
-
-    #specialPanel label {
-        display: block;
-        font-size: 13px;
-        font-weight: bold;
-        margin-bottom: 5px;
-    }
-
-    #knownMeasure {
-        width: 100%;
-        padding: 10px;
-        border-radius: 7px;
-        border: 1px solid #777;
-        background: #fff;
-        color: #000;
-        font-size: 17px;
-        margin-bottom: 7px;
-    }
-
-    #specialHelp {
-        font-size: 13px;
-        line-height: 1.35;
-    }
-
-    #measureStart {
-        margin-top: 8px;
-        background: #1565c0;
-        color: #fff;
-        width: 100%;
-    }
-
-    /* =====================================================
-       EDITOR FLECHA
-       ===================================================== */
-
-    #arrowEditor {
-        position: absolute;
-        inset: 0;
-        z-index: 25;
-        background: #000;
-        touch-action: none;
-        overflow: hidden;
-        overscroll-behavior: none;
-        user-select: none;
-        -webkit-user-select: none;
-        -webkit-touch-callout: none;
-    }
-
-    /* =====================================================
-       STATUS
-       ===================================================== */
-
-    #status {
-        position: absolute;
-        z-index: 60;
-        left: 8px;
-        right: 8px;
-        bottom: 88px;
-        background: rgba(0, 0, 0, .7);
-        padding: 8px;
-        border-radius: 8px;
-        font-size: 12px;
-        white-space: pre-line;
-        pointer-events: none;
-    }
-
-    #preview {
-        display: none;
-        max-width: 100%;
-        max-height: 100%;
-        margin: auto;
-    }
-
-    @media (max-width: 420px) {
-
-        button {
-            padding: 10px 9px;
-            font-size: 12px;
-            min-height: 45px;
-        }
-
-        #specialPanel {
-            top: 68px;
-        }
-
-        #plomadoReading {
-            font-size: 19px;
-        }
-    }
+@media(max-width:420px){
+    button{padding:10px 9px;font-size:12px;min-height:45px}
+    #specialPanel{top:68px}
+    #plomadoReading{font-size:19px}
+}
 </style>
-```
 
 </head>
 
@@ -314,103 +217,78 @@
 
 <div id="cameraContainer">
 
-```
-<video
-    id="video"
-    autoplay
-    playsinline
-    muted
-></video>
+<video id="video" autoplay playsinline muted></video>
 
-<canvas id="canvas"></canvas>
-<canvas id="workCanvas"></canvas>
+<canvas id="canvas"></canvas> <canvas id="workCanvas"></canvas>
 
 <div id="hud">
-
-    <div id="modeBadge">
-        📷 CÁMARA
-    </div>
-
+    <div id="modeBadge">📷 CÁMARA</div>
     <br>
-
-    <div id="sensorHud">
-        Sensores: esperando…
-    </div>
-
+    <div id="sensorHud">Sensores: esperando…</div>
 </div>
 
-<!-- =====================================================
-     PLOMADO
-     ===================================================== -->
+<!-- ================= PLOMADO ================= -->
 
 <div id="plomadoOverlay">
-
     <canvas id="plomadoCanvas"></canvas>
 
-    <div id="plomadoReading">
-        PLOMADO: 0.00°
-    </div>
+```
+<div id="plomadoReading">
+    PLOMADO: 0.00°
+</div>
 
-    <div id="plomadoHelp">
-        Alinea el poste con el péndulo
-    </div>
+<div id="plomadoHelp">
+    Alinea el poste con el péndulo
+</div>
+```
 
 </div>
 
-<!-- =====================================================
-     PANEL MEDICIÓN
-     ===================================================== -->
+<!-- ================= MEDICION ================= -->
 
 <div id="specialPanel">
 
-    <label for="knownMeasure">
-        MEDIDA REAL DEL OBJETO DE REFERENCIA
-    </label>
+```
+<label for="knownMeasure">
+    MEDIDA REAL DEL OBJETO DE REFERENCIA
+</label>
 
-    <input
-        id="knownMeasure"
-        type="number"
-        step="0.001"
-        min="0.001"
-        placeholder="Ejemplo: 2.00 metros"
-    >
+<input
+    id="knownMeasure"
+    type="number"
+    step="0.001"
+    min="0.001"
+    placeholder="Ejemplo: 2.00 metros"
+>
 
-    <div id="specialHelp"></div>
+<div id="specialHelp">
+    Captura la medida real del objeto conocido.
+</div>
 
-    <button id="measureStart">
-        CONTINUAR
-    </button>
+<button id="measureStart">
+    CONTINUAR
+</button>
+```
 
 </div>
 
-<div id="status">
-    Abriendo cámara…
-</div>
+<div id="status">Abriendo cámara…</div>
 
 <div id="controls">
 
-    <button id="signalButton">
-        🎯 SEÑALAR
-    </button>
+```
+<button id="signalButton">🎯 SEÑALAR</button>
 
-    <button id="takeButton" disabled>
-        📸 FOTO
-    </button>
+<button id="takeButton" disabled>📸 FOTO</button>
 
-    <button id="confirmButton">
-        ✅ USAR
-    </button>
+<button id="confirmButton">✅ USAR</button>
 
-    <button id="cancelSignalButton">
-        ❌ CANCELAR
-    </button>
+<button id="cancelSignalButton">❌ CANCELAR</button>
 
-    <button id="cancelButton">
-        ✕ SALIR
-    </button>
+<button id="cancelButton">✕ SALIR</button>
+```
 
 </div>
-```
 
 </div>
 
@@ -420,429 +298,198 @@
 'use strict';
 
 /* =========================================================
-   PARÁMETROS
-   ========================================================= */
+   PARAMETROS
+========================================================= */
 
-const params =
-    new URLSearchParams(location.search);
+const params=new URLSearchParams(location.search);
 
-const tipo =
-    params.get('tipo') || 'poste';
+const tipo=params.get('tipo')||'poste';
+let modo=params.get('modo')||'normal';
 
-let modo =
-    params.get('modo') || 'normal';
+if(String(tipo).trim().toUpperCase()==='MEDIR POSTE')
+    modo='medir';
 
-if (
-    String(tipo).trim().toUpperCase() ===
-    'MEDIR POSTE'
-) {
-    modo = 'medir';
-}
+if(String(tipo).trim().toUpperCase()==='PLOMADO POSTE')
+    modo='plomado';
 
-if (
-    String(tipo).trim().toUpperCase() ===
-    'PLOMADO POSTE'
-) {
-    modo = 'plomado';
-}
-
-const proyecto =
-    params.get('proyecto') || '';
-
-const tipoProyecto =
-    params.get('tipoProyecto') || '';
-
-const hub =
-    params.get('hub') || '';
-
-const rama =
-    params.get('rama') || '';
+const proyecto=params.get('proyecto')||'';
+const tipoProyecto=params.get('tipoProyecto')||'';
+const hub=params.get('hub')||'';
+const rama=params.get('rama')||'';
 
 /* =========================================================
    LOGO
-   ========================================================= */
+========================================================= */
 
-const LOGO_DRIVE_ID =
-    '12EpwDn_A9mR0DfZSiGoTi2NS9zFNYPVP';
+const LOGO_DRIVE_ID='12EpwDn_A9mR0DfZSiGoTi2NS9zFNYPVP';
 
-const LOGO_URL =
-    'https://lh3.googleusercontent.com/d/' +
-    LOGO_DRIVE_ID;
+const LOGO_URL=
+    'https://lh3.googleusercontent.com/d/'+LOGO_DRIVE_ID;
 
-const LOGO_URL_ALTERNATIVO =
-    'https://drive.google.com/uc?export=view&id=' +
-    LOGO_DRIVE_ID;
+const LOGO_URL_ALTERNATIVO=
+    'https://drive.google.com/uc?export=view&id='+LOGO_DRIVE_ID;
 
 /* =========================================================
    DOM
-   ========================================================= */
+========================================================= */
 
-const video =
-    document.getElementById('video');
+const video=document.getElementById('video');
+const canvas=document.getElementById('canvas');
+const workCanvas=document.getElementById('workCanvas');
 
-const canvas =
-    document.getElementById('canvas');
+const takeButton=document.getElementById('takeButton');
+const signalButton=document.getElementById('signalButton');
+const confirmButton=document.getElementById('confirmButton');
+const cancelSignalButton=document.getElementById('cancelSignalButton');
+const cancelButton=document.getElementById('cancelButton');
 
-const workCanvas =
-    document.getElementById('workCanvas');
+const status=document.getElementById('status');
+const preview=document.getElementById('preview');
+const modeBadge=document.getElementById('modeBadge');
+const sensorHud=document.getElementById('sensorHud');
 
-const takeButton =
-    document.getElementById('takeButton');
+const specialPanel=document.getElementById('specialPanel');
+const knownMeasure=document.getElementById('knownMeasure');
+const specialHelp=document.getElementById('specialHelp');
+const measureStart=document.getElementById('measureStart');
 
-const signalButton =
-    document.getElementById('signalButton');
-
-const confirmButton =
-    document.getElementById('confirmButton');
-
-const cancelSignalButton =
-    document.getElementById('cancelSignalButton');
-
-const cancelButton =
-    document.getElementById('cancelButton');
-
-const status =
-    document.getElementById('status');
-
-const preview =
-    document.getElementById('preview');
-
-const modeBadge =
-    document.getElementById('modeBadge');
-
-const sensorHud =
-    document.getElementById('sensorHud');
-
-const specialPanel =
-    document.getElementById('specialPanel');
-
-const knownMeasure =
-    document.getElementById('knownMeasure');
-
-const specialHelp =
-    document.getElementById('specialHelp');
-
-const measureStart =
-    document.getElementById('measureStart');
-
-const plomadoOverlay =
-    document.getElementById('plomadoOverlay');
-
-const plomadoCanvas =
-    document.getElementById('plomadoCanvas');
-
-const plomadoReading =
-    document.getElementById('plomadoReading');
-
-const plomadoHelp =
-    document.getElementById('plomadoHelp');
+const plomadoOverlay=document.getElementById('plomadoOverlay');
+const plomadoCanvas=document.getElementById('plomadoCanvas');
+const plomadoReading=document.getElementById('plomadoReading');
+const plomadoHelp=document.getElementById('plomadoHelp');
 
 /* =========================================================
    ESTADO
-   ========================================================= */
+========================================================= */
 
-let cameraStream = null;
+let cameraStream=null;
+let gpsActual=null;
+let fechaFoto=null;
+let logoImagen=null;
+let logoListo=false;
+let zonaLogo=null;
+let zonaEstampado=null;
+let modoSenalar=false;
+let fotoBase=null;
 
-let gpsActual = null;
+let flechaX=null;
+let flechaY=null;
+let flechaAngulo=0;
+let flechaEscala=1;
 
-let fechaFoto = null;
+let motionHandler=null;
+let orientationHandler=null;
 
-let logoImagen = null;
+let gravity={x:0,y:-1,z:0};
+let gravityReady=false;
 
-let logoListo = false;
+let plomadoGrados=0;
+let plomadoActivo=false;
 
-let zonaLogo = null;
-
-let zonaEstampado = null;
-
-let modoSenalar = false;
-
-let fotoBase = null;
-
-/* Flecha */
-
-let flechaX = null;
-let flechaY = null;
-let flechaAngulo = 0;
-let flechaEscala = 1;
-
-let gestoActivo = false;
-let toqueInicial = null;
-
-/* Sensores */
-
-let motionHandler = null;
-let orientationHandler = null;
-
-let gravity = {
-    x: 0,
-    y: -9.8,
-    z: 0
-};
-
-let gravityReady = false;
-
-/*
- * Valores de orientación.
- *
- * beta  = inclinación adelante/atrás
- * gamma = inclinación izquierda/derecha
- */
-
-let deviceBeta = null;
-let deviceGamma = null;
-let deviceAlpha = null;
-
-let orientationReady = false;
-
-/* Plomado */
-
-let plomadoGrados = 0;
-
-let plomadoActivo = false;
-
-/* Medición */
-
-let referenceReal = null;
+let referenceReal=null;
 
 /* =========================================================
    GENERALES
-   ========================================================= */
+========================================================= */
 
-function setStatus(text) {
-    status.textContent = text;
+function setStatus(text){
+    status.textContent=text;
 }
 
-function nombreTipo(t) {
-
-    if (t === 'poste') {
-        return 'POSTE';
-    }
-
-    if (t === 'carriers') {
-        return 'CAJAS CARRIERS';
-    }
-
+function nombreTipo(t){
+    if(t==='poste')return 'POSTE';
+    if(t==='carriers')return 'CAJAS CARRIERS';
     return String(t).toUpperCase();
 }
 
-function formatDate(d) {
+function formatDate(d){
+    const p=n=>String(n).padStart(2,'0');
 
-    const p =
-        n => String(n).padStart(2, '0');
-
-    return (
-        d.getFullYear() +
-        p(d.getMonth() + 1) +
-        p(d.getDate()) +
-        '_' +
-        p(d.getHours()) +
-        p(d.getMinutes()) +
-        p(d.getSeconds())
-    );
+    return d.getFullYear()+
+        p(d.getMonth()+1)+
+        p(d.getDate())+'_'+
+        p(d.getHours())+
+        p(d.getMinutes())+
+        p(d.getSeconds());
 }
 
-function crearNombreFoto(t, d) {
-
-    return (
-        'STAMPED_' +
-        nombreTipo(t).replace(/\s+/g, '_') +
-        '_' +
-        formatDate(d) +
-        '.jpg'
-    );
+function crearNombreFoto(t,d){
+    return 'STAMPED_'+
+        nombreTipo(t).replace(/\s+/g,'_')+
+        '_'+formatDate(d)+'.jpg';
 }
 
-function clamp(v, a, b) {
-
-    return Math.max(
-        a,
-        Math.min(b, v)
-    );
-}
-
-/* =========================================================
-   ORIENTACIÓN DE PANTALLA
-   ========================================================= */
-
-function obtenerOrientacionPantalla() {
-
-    let angle = null;
-
-    if (
-        screen &&
-        screen.orientation &&
-        Number.isFinite(
-            screen.orientation.angle
-        )
-    ) {
-        angle =
-            Number(
-                screen.orientation.angle
-            );
-    }
-
-    /*
-     * Fallback para Safari/iPhone antiguos.
-     */
-
-    if (
-        angle === null &&
-        Number.isFinite(window.orientation)
-    ) {
-        angle =
-            Number(window.orientation);
-    }
-
-    /*
-     * Si el navegador no entrega ángulo,
-     * inferimos solamente portrait/landscape.
-     */
-
-    if (angle === null) {
-
-        if (
-            window.innerWidth >
-            window.innerHeight
-        ) {
-            angle = 90;
-        } else {
-            angle = 0;
-        }
-    }
-
-    angle =
-        ((angle % 360) + 360) % 360;
-
-    /*
-     * Normalizamos a los cuatro estados.
-     */
-
-    if (angle < 45 || angle >= 315) {
-        return 0;
-    }
-
-    if (angle < 135) {
-        return 90;
-    }
-
-    if (angle < 225) {
-        return 180;
-    }
-
-    return 270;
+function clamp(v,a,b){
+    return Math.max(a,Math.min(b,v));
 }
 
 /* =========================================================
    LOGO
-   ========================================================= */
+========================================================= */
 
-function cargarLogo() {
+function cargarLogo(){
 
-    logoListo = false;
+    logoListo=false;
+    logoImagen=new Image();
+    logoImagen.crossOrigin='anonymous';
 
-    logoImagen = new Image();
-
-    logoImagen.crossOrigin =
-        'anonymous';
-
-    logoImagen.onload = () => {
-        logoListo = true;
+    logoImagen.onload=()=>{
+        logoListo=true;
     };
 
-    logoImagen.onerror = () => {
+    logoImagen.onerror=()=>{
 
-        const im = new Image();
+        const im=new Image();
+        im.crossOrigin='anonymous';
 
-        im.crossOrigin =
-            'anonymous';
-
-        im.onload = () => {
-
-            logoImagen = im;
-            logoListo = true;
+        im.onload=()=>{
+            logoImagen=im;
+            logoListo=true;
         };
 
-        im.src =
-            LOGO_URL_ALTERNATIVO;
+        im.src=LOGO_URL_ALTERNATIVO;
     };
 
-    logoImagen.src =
-        LOGO_URL;
+    logoImagen.src=LOGO_URL;
 }
 
-function dibujarLogo(ctx, w, h) {
+function dibujarLogo(ctx,w,h){
 
-    zonaLogo = null;
+    zonaLogo=null;
 
-    if (
-        !logoListo ||
-        !logoImagen
-    ) {
-        return;
-    }
+    if(!logoListo||!logoImagen)return;
 
-    const maxW =
-        w * .18;
+    const maxW=w*.18;
+    const maxH=h*.14;
 
-    const maxH =
-        h * .14;
+    const s=Math.min(
+        maxW/logoImagen.width,
+        maxH/logoImagen.height
+    );
 
-    const s =
-        Math.min(
-            maxW / logoImagen.width,
-            maxH / logoImagen.height
-        );
+    const lw=logoImagen.width*s;
+    const lh=logoImagen.height*s;
 
-    const lw =
-        logoImagen.width * s;
+    const m=Math.max(20,w*.025);
+    const x=w-lw-m;
+    const y=m;
+    const b=Math.max(15,w*.012);
 
-    const lh =
-        logoImagen.height * s;
-
-    const m =
-        Math.max(
-            20,
-            w * .025
-        );
-
-    const x =
-        w - lw - m;
-
-    const y =
-        m;
-
-    const b =
-        Math.max(
-            15,
-            w * .012
-        );
-
-    zonaLogo = {
-        x: x - b,
-        y: y - b,
-        width: lw + b * 2,
-        height: lh + b * 2
+    zonaLogo={
+        x:x-b,
+        y:y-b,
+        width:lw+b*2,
+        height:lh+b*2
     };
 
     ctx.save();
 
-    ctx.fillStyle =
-        'rgba(0,0,0,.2)';
-
-    ctx.fillRect(
-        x - 5,
-        y - 5,
-        lw + 10,
-        lh + 10
-    );
+    ctx.fillStyle='rgba(0,0,0,.2)';
+    ctx.fillRect(x-5,y-5,lw+10,lh+10);
 
     ctx.drawImage(
         logoImagen,
-        x,
-        y,
-        lw,
-        lh
+        x,y,lw,lh
     );
 
     ctx.restore();
@@ -850,40 +497,22 @@ function dibujarLogo(ctx, w, h) {
 
 /* =========================================================
    ESTAMPADO
-   ========================================================= */
+========================================================= */
 
-function dibujarEstampado(
-    ctx,
-    w,
-    h,
-    extra = []
-) {
+function dibujarEstampado(ctx,w,h,extra=[]){
 
-    const s =
-        Math.max(w, h) / 1200;
+    const s=Math.max(w,h)/1200;
+    const pad=Math.round(16*s);
+    const font=Math.max(16,Math.round(20*s));
+    const line=27*s;
 
-    const pad =
-        Math.round(16 * s);
+    const pos=gpsActual;
+    const d=fechaFoto||new Date();
 
-    const font =
-        Math.max(
-            16,
-            Math.round(20 * s)
-        );
-
-    const line =
-        27 * s;
-
-    const pos =
-        gpsActual;
-
-    const d =
-        fechaFoto || new Date();
-
-    const base = [
-        `PROYECTO: ${proyecto || 'SIN PROYECTO'}`,
-        `TIPO PROYECTO: ${tipoProyecto || 'SIN TIPO'}`,
-        `HUB: ${hub || '-'}  RAMA: ${rama || '-'}`,
+    const base=[
+        `PROYECTO: ${proyecto||'SIN PROYECTO'}`,
+        `TIPO PROYECTO: ${tipoProyecto||'SIN TIPO'}`,
+        `HUB: ${hub||'-'}  RAMA: ${rama||'-'}`,
         `TIPO FOTO: ${nombreTipo(tipo)}`,
         `${d.toLocaleDateString('es-MX')}  ${d.toLocaleTimeString('es-MX')}`,
         pos
@@ -892,164 +521,81 @@ function dibujarEstampado(
         ...extra
     ];
 
-    ctx.font =
-        `bold ${font}px Arial`;
+    ctx.font=`bold ${font}px Arial`;
 
-    let tw = 0;
+    let tw=0;
 
-    base.forEach(text => {
-
-        tw = Math.max(
-            tw,
-            ctx.measureText(text).width
-        );
+    base.forEach(t=>{
+        tw=Math.max(tw,ctx.measureText(t).width);
     });
 
-    const bw =
-        tw + pad * 2;
+    const bw=tw+pad*2;
+    const bh=base.length*line+pad*2;
 
-    const bh =
-        base.length * line +
-        pad * 2;
+    const x=pad;
+    const y=h-bh-pad;
 
-    const x =
-        pad;
-
-    const y =
-        h - bh - pad;
-
-    zonaEstampado = {
-        x: x - 18,
-        y: y - 18,
-        width: bw + 36,
-        height: bh + 36
+    zonaEstampado={
+        x:x-18,
+        y:y-18,
+        width:bw+36,
+        height:bh+36
     };
 
-    ctx.fillStyle =
-        'rgba(0,0,0,.48)';
+    ctx.fillStyle='rgba(0,0,0,.48)';
 
     ctx.beginPath();
-
-    ctx.roundRect(
-        x,
-        y,
-        bw,
-        bh,
-        10 * s
-    );
-
+    ctx.roundRect(x,y,bw,bh,10*s);
     ctx.fill();
 
-    ctx.fillStyle =
-        'rgba(255,255,255,.96)';
+    ctx.fillStyle='rgba(255,255,255,.96)';
+    ctx.textBaseline='top';
 
-    ctx.textBaseline =
-        'top';
-
-    base.forEach((text, i) => {
-
+    base.forEach((t,i)=>{
         ctx.fillText(
-            text,
-            x + pad,
-            y + pad + i * line
+            t,
+            x+pad,
+            y+pad+i*line
         );
     });
 
-    dibujarLogo(
-        ctx,
-        w,
-        h
-    );
+    dibujarLogo(ctx,w,h);
 }
 
 /* =========================================================
    SENSORES
-   ========================================================= */
+========================================================= */
 
-async function iniciarSensores() {
+async function iniciarSensores(){
 
-    try {
+    try{
 
-        /*
-         * Algunos navegadores requieren permiso.
-         */
+        if(
+            typeof DeviceMotionEvent!=='undefined' &&
+            typeof DeviceMotionEvent.requestPermission==='function'
+        ){
 
-        if (
-            typeof DeviceMotionEvent !==
-            'undefined' &&
-            typeof DeviceMotionEvent.requestPermission ===
-            'function'
-        ) {
+            const p=await DeviceMotionEvent.requestPermission();
 
-            const p =
-                await DeviceMotionEvent
-                    .requestPermission();
-
-            if (p !== 'granted') {
-
-                throw new Error(
-                    'Permiso de movimiento no concedido'
-                );
-            }
+            if(p!=='granted')
+                throw new Error('Permiso de movimiento no concedido');
         }
 
-        if (
-            typeof DeviceOrientationEvent !==
-            'undefined' &&
-            typeof DeviceOrientationEvent.requestPermission ===
-            'function'
-        ) {
+        motionHandler=e=>{
 
-            const p =
-                await DeviceOrientationEvent
-                    .requestPermission();
+            const a=
+                e.accelerationIncludingGravity||
+                e.acceleration||{};
 
-            if (p !== 'granted') {
+            if(Number.isFinite(a.x)&&Number.isFinite(a.y)){
 
-                throw new Error(
-                    'Permiso de orientación no concedido'
-                );
-            }
-        }
-
-        /* -----------------------------------------------
-           DEVICEMOTION
-           ----------------------------------------------- */
-
-        motionHandler = e => {
-
-            const a =
-                e.accelerationIncludingGravity ||
-                e.acceleration;
-
-            if (!a) {
-                return;
-            }
-
-            const x =
-                Number(a.x);
-
-            const y =
-                Number(a.y);
-
-            const z =
-                Number(a.z);
-
-            if (
-                Number.isFinite(x) &&
-                Number.isFinite(y)
-            ) {
-
-                gravity = {
-                    x,
-                    y,
-                    z: Number.isFinite(z)
-                        ? z
-                        : 0
+                gravity={
+                    x:a.x,
+                    y:a.y,
+                    z:a.z||0
                 };
 
-                gravityReady = true;
-
+                gravityReady=true;
                 actualizarPlomado();
             }
         };
@@ -1057,1012 +603,373 @@ async function iniciarSensores() {
         window.addEventListener(
             'devicemotion',
             motionHandler,
-            {
-                passive: true
-            }
+            {passive:true}
         );
 
-        /* -----------------------------------------------
-           DEVICEORIENTATION
-           ----------------------------------------------- */
+        if(
+            typeof DeviceOrientationEvent!=='undefined' &&
+            typeof DeviceOrientationEvent.requestPermission==='function'
+        ){
 
-        orientationHandler = e => {
+            const p=await DeviceOrientationEvent.requestPermission();
 
-            if (
-                Number.isFinite(e.beta)
-            ) {
-                deviceBeta =
-                    Number(e.beta);
-            }
+            if(p!=='granted')
+                throw new Error('Permiso de orientación no concedido');
+        }
 
-            if (
-                Number.isFinite(e.gamma)
-            ) {
-                deviceGamma =
-                    Number(e.gamma);
-            }
-
-            if (
-                Number.isFinite(e.alpha)
-            ) {
-                deviceAlpha =
-                    Number(e.alpha);
-            }
-
-            orientationReady =
-                Number.isFinite(deviceBeta) ||
-                Number.isFinite(deviceGamma);
-
+        orientationHandler=()=>{
             actualizarPlomado();
         };
 
         window.addEventListener(
             'deviceorientation',
             orientationHandler,
-            {
-                passive: true
-            }
+            {passive:true}
         );
 
-        /*
-         * Redibujar inmediatamente al cambiar
-         * la orientación del teléfono.
-         */
+        sensorHud.textContent='Sensores: ACTIVOS';
 
-        if (
-            screen &&
-            screen.orientation
-        ) {
+    }catch(e){
 
-            screen.orientation.addEventListener(
-                'change',
-                () => {
-
-                    setTimeout(
-                        () => {
-
-                            actualizarPlomado();
-
-                            if (plomadoActivo) {
-                                dibujarTransportador();
-                            }
-
-                        },
-                        100
-                    );
-                }
-            );
-        }
-
-        window.addEventListener(
-            'orientationchange',
-            () => {
-
-                setTimeout(
-                    () => {
-
-                        actualizarPlomado();
-
-                        if (plomadoActivo) {
-                            dibujarTransportador();
-                        }
-
-                    },
-                    150
-                );
-            }
-        );
-
-        sensorHud.textContent =
-            'Sensores: ACTIVOS';
-
-    } catch (e) {
-
-        sensorHud.textContent =
-            'Sensores: no disponibles';
-
+        sensorHud.textContent='Sensores: no disponibles';
         console.warn(e);
     }
 }
 
 /* =========================================================
-   CÁLCULO CON DEVICEORIENTATION
-   =========================================================
+   GRAVEDAD SEGUN ORIENTACION
+========================================================= */
 
-   La clave de esta versión:
+function screenGravity(){
 
-   PORTRAIT:
-       gamma controla la inclinación izquierda/derecha.
+    let x=gravity.x;
+    let y=gravity.y;
 
-   LANDSCAPE:
-       beta controla la inclinación izquierda/derecha.
+    const a=(
+        (
+            screen.orientation &&
+            screen.orientation.angle
+        )||0
+    )%360;
 
-   Así evitamos que en vertical el péndulo termine
-   horizontal por interpretar el eje equivocado.
+    if(a===90){
+
+        const q=x;
+        x=y;
+        y=-q;
+
+    }else if(a===180){
+
+        x=-x;
+        y=-y;
+
+    }else if(a===270){
+
+        const q=x;
+        x=-y;
+        y=q;
+    }
+
+    return{x,y};
+}
+
+/* =========================================================
+   ANGULO PENDULO
+========================================================= */
+
+function calcularAnguloPendulo(){
+
+    const g=screenGravity();
+
+    if(
+        !Number.isFinite(g.x)||
+        !Number.isFinite(g.y)
+    )return 0;
+
+    const magnitude=Math.hypot(g.x,g.y);
+
+    if(magnitude<.1)return 0;
+
+    let ang=
+        Math.atan2(g.x,-g.y)*
+        180/Math.PI;
+
+    while(ang>180)ang-=360;
+    while(ang<-180)ang+=360;
+
+    return clamp(ang,-90,90);
+}
+
+/* =========================================================
+   TRANSPORTADOR DEL PLOMADO
    ========================================================= */
 
-function calcularDesdeDeviceOrientation() {
+function dibujarTransportador(){
 
-    if (!orientationReady) {
-        return null;
+    const w=plomadoOverlay.clientWidth;
+    const h=plomadoOverlay.clientHeight;
+
+    if(!w||!h)return;
+
+    const dpr=window.devicePixelRatio||1;
+
+    const rw=Math.round(w*dpr);
+    const rh=Math.round(h*dpr);
+
+    if(
+        plomadoCanvas.width!==rw||
+        plomadoCanvas.height!==rh
+    ){
+
+        plomadoCanvas.width=rw;
+        plomadoCanvas.height=rh;
     }
 
-    const orientacion =
-        obtenerOrientacionPantalla();
+    const c=plomadoCanvas.getContext('2d');
 
-    let ang = 0;
-
-    if (
-        orientacion === 0
-    ) {
-
-        /*
-         * Portrait normal.
-         *
-         * Gamma positivo = derecha.
-         */
-
-        ang =
-            Number(deviceGamma || 0);
-
-    } else if (
-        orientacion === 90
-    ) {
-
-        /*
-         * Landscape principal.
-         *
-         * Beta pasa a representar el eje
-         * izquierda/derecha de la pantalla.
-         */
-
-        ang =
-            -Number(deviceBeta || 0);
-
-    } else if (
-        orientacion === 180
-    ) {
-
-        /*
-         * Portrait invertido.
-         */
-
-        ang =
-            -Number(deviceGamma || 0);
-
-    } else {
-
-        /*
-         * Landscape secundario.
-         */
-
-        ang =
-            Number(deviceBeta || 0);
-    }
+    c.setTransform(dpr,0,0,dpr,0,0);
+    c.clearRect(0,0,w,h);
 
     /*
-     * Evita lecturas extrañas cuando beta
-     * pasa por la zona de 90/270 grados.
-     */
+       MEDIO CIRCULO:
+       parte plana arriba,
+       arco hacia abajo.
+    */
 
-    while (ang > 180) {
-        ang -= 360;
-    }
+    const cx=w/2;
+    const cy=Math.max(90,h*.16);
 
-    while (ang < -180) {
-        ang += 360;
-    }
-
-    /*
-     * Para plomado utilizamos solamente
-     * la inclinación útil de -90 a +90.
-     */
-
-    if (ang > 90) {
-        ang = 180 - ang;
-    }
-
-    if (ang < -90) {
-        ang = -180 - ang;
-    }
-
-    return clamp(
-        ang,
-        -90,
-        90
+    const radius=Math.min(
+        w*.44,
+        h*.34
     );
-}
-
-/* =========================================================
-   FALLBACK DEVICEMOTION
-   ========================================================= */
-
-function calcularDesdeMotion() {
-
-    if (!gravityReady) {
-        return 0;
-    }
-
-    let x =
-        Number(gravity.x) || 0;
-
-    let y =
-        Number(gravity.y) || 0;
-
-    /*
-     * Transformamos el vector de los ejes del
-     * dispositivo al eje de la pantalla.
-     */
-
-    const o =
-        obtenerOrientacionPantalla();
-
-    let sx;
-    let sy;
-
-    if (o === 0) {
-
-        sx = x;
-        sy = y;
-
-    } else if (o === 90) {
-
-        sx = y;
-        sy = -x;
-
-    } else if (o === 180) {
-
-        sx = -x;
-        sy = -y;
-
-    } else {
-
-        sx = -y;
-        sy = x;
-    }
-
-    const magnitud =
-        Math.hypot(
-            sx,
-            sy
-        );
-
-    /*
-     * Si el teléfono está prácticamente plano,
-     * la proyección XY no es válida.
-     */
-
-    if (magnitud < 0.8) {
-        return 0;
-    }
-
-    let ang =
-        Math.atan2(
-            sx,
-            -sy
-        ) *
-        180 /
-        Math.PI;
-
-    while (ang > 180) {
-        ang -= 360;
-    }
-
-    while (ang < -180) {
-        ang += 360;
-    }
-
-    if (ang > 90) {
-        ang = 180 - ang;
-    }
-
-    if (ang < -90) {
-        ang = -180 - ang;
-    }
-
-    return clamp(
-        ang,
-        -90,
-        90
-    );
-}
-
-/* =========================================================
-   ÁNGULO FINAL
-   ========================================================= */
-
-function calcularAnguloPendulo() {
-
-    /*
-     * Preferimos deviceorientation porque ya entrega
-     * beta/gamma asociados a la orientación física.
-     */
-
-    const orientationAngle =
-        calcularDesdeDeviceOrientation();
-
-    if (
-        Number.isFinite(
-            orientationAngle
-        )
-    ) {
-
-        return orientationAngle;
-    }
-
-    return calcularDesdeMotion();
-}
-
-/* =========================================================
-   GEOMETRÍA DEL TRANSPORTADOR
-   =========================================================
-
-   IMPORTANTE:
-
-   ES UN MEDIO CÍRCULO.
-
-   La parte plana está arriba.
-
-   El arco está hacia ABAJO.
-
-   El centro del transportador está arriba.
-
-   -90° = izquierda
-     0° = abajo
-   +90° = derecha
-
-   Esto coincide con la dirección del péndulo.
-   ========================================================= */
-
-function obtenerGeometriaTransportador(
-    w,
-    h
-) {
-
-    const cx =
-        w / 2;
-
-    /*
-     * Centro siempre arriba.
-     */
-
-    const cy =
-        Math.max(
-            115,
-            h * 0.18
-        );
-
-    /*
-     * En vertical hacemos el arco un poco
-     * más pequeño para dejar espacio.
-     */
-
-    const radius =
-        Math.min(
-            w * 0.43,
-            h * 0.31
-        );
-
-    return {
-        cx,
-        cy,
-        radius
-    };
-}
-
-/* =========================================================
-   DIBUJAR MEDIO CÍRCULO
-   ========================================================= */
-
-function dibujarTransportadorEnContexto(
-    c,
-    w,
-    h,
-    angulo,
-    opciones = {}
-) {
-
-    const escala =
-        opciones.escala || 1;
-
-    const mostrarPendulo =
-        opciones.mostrarPendulo !== false;
-
-    const g =
-        obtenerGeometriaTransportador(
-            w,
-            h
-        );
-
-    const cx =
-        g.cx;
-
-    const cy =
-        g.cy;
-
-    const radius =
-        g.radius *
-        escala;
 
     c.save();
 
-    /*
-     * =====================================================
-     * ARCO: SOLO MEDIO CÍRCULO
-     * =====================================================
-     *
-     * Va desde -90 hasta +90 según nuestra escala,
-     * pero visualmente recorre TODO el arco inferior.
-     */
-
+    /* arco */
     c.beginPath();
 
-    const pasos = 180;
+    for(let i=0;i<=180;i++){
 
-    for (
-        let i = 0;
-        i <= pasos;
-        i++
-    ) {
+        const deg=-90+i;
+        const rad=deg*Math.PI/180;
 
-        const deg =
-            -90 + i;
+        const x=
+            cx+
+            radius*Math.sin(rad);
 
-        const rad =
-            deg *
-            Math.PI /
-            180;
+        const y=
+            cy+
+            radius*Math.cos(rad);
 
-        /*
-         * 0° apunta hacia ABAJO.
-         */
-
-        const x =
-            cx +
-            radius *
-            Math.sin(rad);
-
-        const y =
-            cy +
-            radius *
-            Math.cos(rad);
-
-        if (i === 0) {
-            c.moveTo(x, y);
-        } else {
-            c.lineTo(x, y);
-        }
+        if(i===0)c.moveTo(x,y);
+        else c.lineTo(x,y);
     }
 
-    c.strokeStyle =
-        'rgba(255,255,255,.95)';
-
-    c.lineWidth =
-        Math.max(
-            2,
-            3 * escala
-        );
-
+    c.strokeStyle='rgba(255,255,255,.92)';
+    c.lineWidth=3;
     c.stroke();
 
-    /*
-     * =====================================================
-     * PARTE PLANA SUPERIOR
-     * =====================================================
-     */
+    /* marcas */
+    for(let deg=-90;deg<=90;deg++){
 
-    c.beginPath();
+        const rad=deg*Math.PI/180;
 
-    c.moveTo(
-        cx - radius,
-        cy
-    );
+        const x1=
+            cx+
+            radius*Math.sin(rad);
 
-    c.lineTo(
-        cx + radius,
-        cy
-    );
+        const y1=
+            cy+
+            radius*Math.cos(rad);
 
-    c.strokeStyle =
-        'rgba(255,255,255,.95)';
+        let largo=9;
 
-    c.lineWidth =
-        Math.max(
-            2,
-            3 * escala
-        );
+        if(deg%10===0)largo=27;
+        else if(deg%5===0)largo=18;
 
-    c.stroke();
+        const x2=
+            cx+
+            (radius-largo)*Math.sin(rad);
 
-    /*
-     * =====================================================
-     * MARCAS
-     * =====================================================
-     */
-
-    for (
-        let deg = -90;
-        deg <= 90;
-        deg++
-    ) {
-
-        const rad =
-            deg *
-            Math.PI /
-            180;
-
-        let largo = 8;
-
-        if (
-            deg % 10 === 0
-        ) {
-
-            largo = 25;
-
-        } else if (
-            deg % 5 === 0
-        ) {
-
-            largo = 17;
-        }
-
-        const x1 =
-            cx +
-            radius *
-            Math.sin(rad);
-
-        const y1 =
-            cy +
-            radius *
-            Math.cos(rad);
-
-        const x2 =
-            cx +
-            (radius - largo) *
-            Math.sin(rad);
-
-        const y2 =
-            cy +
-            (radius - largo) *
-            Math.cos(rad);
+        const y2=
+            cy+
+            (radius-largo)*Math.cos(rad);
 
         c.beginPath();
+        c.moveTo(x1,y1);
+        c.lineTo(x2,y2);
 
-        c.moveTo(
-            x1,
-            y1
-        );
+        c.strokeStyle=
+            deg===0
+                ? '#00ff00'
+                : 'rgba(255,255,255,.88)';
 
-        c.lineTo(
-            x2,
-            y2
-        );
-
-        c.strokeStyle =
-            deg === 0
-                ? '#00ff66'
-                : 'rgba(255,255,255,.9)';
-
-        c.lineWidth =
-            deg === 0
+        c.lineWidth=
+            deg===0
                 ? 4
-                : deg % 10 === 0
+                : deg%10===0
                     ? 3
                     : 1.5;
 
         c.stroke();
     }
 
-    /*
-     * =====================================================
-     * NÚMEROS
-     * =====================================================
-     */
+    /* numeros */
+    c.textAlign='center';
+    c.textBaseline='middle';
+    c.font='bold 13px Arial';
 
-    c.textAlign =
-        'center';
+    for(let deg=-90;deg<=90;deg+=10){
 
-    c.textBaseline =
-        'middle';
+        const rad=deg*Math.PI/180;
+        const tr=radius-43;
 
-    c.font =
-        `bold ${Math.max(12, 13 * escala)}px Arial`;
+        const tx=
+            cx+
+            tr*Math.sin(rad);
 
-    for (
-        let deg = -90;
-        deg <= 90;
-        deg += 10
-    ) {
+        const ty=
+            cy+
+            tr*Math.cos(rad);
 
-        const rad =
-            deg *
-            Math.PI /
-            180;
-
-        const textRadius =
-            radius - 42;
-
-        const tx =
-            cx +
-            textRadius *
-            Math.sin(rad);
-
-        const ty =
-            cy +
-            textRadius *
-            Math.cos(rad);
-
-        c.fillStyle =
-            deg === 0
-                ? '#00ff66'
+        c.fillStyle=
+            deg===0
+                ? '#00ff00'
                 : '#fff';
 
-        c.fillText(
-            `${deg}°`,
-            tx,
-            ty
-        );
+        c.fillText(`${deg}°`,tx,ty);
     }
 
-    /*
-     * =====================================================
-     * CENTRO
-     * =====================================================
-     */
-
+    /* punto de giro */
     c.beginPath();
-
-    c.arc(
-        cx,
-        cy,
-        8,
-        0,
-        Math.PI * 2
-    );
-
-    c.fillStyle =
-        '#1565ff';
-
+    c.arc(cx,cy,9,0,Math.PI*2);
+    c.fillStyle='#ff3b30';
     c.fill();
 
-    c.strokeStyle =
-        '#fff';
+    c.strokeStyle='#fff';
+    c.lineWidth=2;
+    c.stroke();
 
-    c.lineWidth =
-        2;
+    /* pendulo */
+    const ang=plomadoGrados*Math.PI/180;
 
+    const longitud=Math.min(
+        h*.52,
+        w*.52
+    );
+
+    const px=
+        cx+
+        longitud*Math.sin(ang);
+
+    const py=
+        cy+
+        longitud*Math.cos(ang);
+
+    /* contorno */
+    c.beginPath();
+    c.moveTo(cx,cy);
+    c.lineTo(px,py);
+    c.strokeStyle='rgba(0,0,0,.85)';
+    c.lineWidth=10;
+    c.lineCap='round';
+    c.stroke();
+
+    /* rojo */
+    c.beginPath();
+    c.moveTo(cx,cy);
+    c.lineTo(px,py);
+    c.strokeStyle='#ff3030';
+    c.lineWidth=5;
+    c.stroke();
+
+    /* peso */
+    c.beginPath();
+    c.arc(px,py,11,0,Math.PI*2);
+    c.fillStyle='#ff3030';
+    c.fill();
+
+    c.strokeStyle='#fff';
+    c.lineWidth=2;
     c.stroke();
 
     /*
-     * =====================================================
-     * PÉNDULO
-     * =====================================================
-     */
+       REFERENCIA VERTICAL
+    */
+    c.beginPath();
+    c.moveTo(cx,cy);
+    c.lineTo(
+        cx,
+        Math.min(h,cy+longitud)
+    );
 
-    if (mostrarPendulo) {
-
-        const rad =
-            angulo *
-            Math.PI /
-            180;
-
-        /*
-         * El péndulo es más largo que el arco.
-         */
-
-        const longitud =
-            Math.min(
-                h * .52,
-                w * .58
-            );
-
-        const px =
-            cx +
-            longitud *
-            Math.sin(rad);
-
-        const py =
-            cy +
-            longitud *
-            Math.cos(rad);
-
-        /*
-         * Línea vertical de referencia.
-         * Azul.
-         */
-
-        c.beginPath();
-
-        c.moveTo(
-            cx,
-            cy
-        );
-
-        c.lineTo(
-            cx,
-            Math.min(
-                h,
-                cy + longitud
-            )
-        );
-
-        c.strokeStyle =
-            'rgba(0,160,255,.78)';
-
-        c.lineWidth =
-            2;
-
-        c.setLineDash([
-            8,
-            8
-        ]);
-
-        c.stroke();
-
-        c.setLineDash([]);
-
-        /*
-         * Sombra negra del péndulo.
-         */
-
-        c.beginPath();
-
-        c.moveTo(
-            cx,
-            cy
-        );
-
-        c.lineTo(
-            px,
-            py
-        );
-
-        c.strokeStyle =
-            'rgba(0,0,0,.85)';
-
-        c.lineWidth =
-            9;
-
-        c.lineCap =
-            'round';
-
-        c.stroke();
-
-        /*
-         * Péndulo rojo.
-         */
-
-        c.beginPath();
-
-        c.moveTo(
-            cx,
-            cy
-        );
-
-        c.lineTo(
-            px,
-            py
-        );
-
-        c.strokeStyle =
-            '#ff3030';
-
-        c.lineWidth =
-            4;
-
-        c.lineCap =
-            'round';
-
-        c.stroke();
-
-        /*
-         * Peso.
-         */
-
-        c.beginPath();
-
-        c.arc(
-            px,
-            py,
-            10,
-            0,
-            Math.PI * 2
-        );
-
-        c.fillStyle =
-            '#ff3030';
-
-        c.fill();
-
-        c.strokeStyle =
-            '#fff';
-
-        c.lineWidth =
-            2;
-
-        c.stroke();
-    }
+    c.strokeStyle='rgba(0,150,255,.72)';
+    c.lineWidth=2;
+    c.setLineDash([8,8]);
+    c.stroke();
+    c.setLineDash([]);
 
     c.restore();
-}
 
-/* =========================================================
-   DIBUJAR TRANSPORTADOR EN PANTALLA
-   ========================================================= */
-
-function dibujarTransportador() {
-
-    const w =
-        plomadoOverlay.clientWidth;
-
-    const h =
-        plomadoOverlay.clientHeight;
-
-    if (!w || !h) {
-        return;
-    }
-
-    const dpr =
-        window.devicePixelRatio || 1;
-
-    const rw =
-        Math.round(w * dpr);
-
-    const rh =
-        Math.round(h * dpr);
-
-    if (
-        plomadoCanvas.width !== rw ||
-        plomadoCanvas.height !== rh
-    ) {
-
-        plomadoCanvas.width =
-            rw;
-
-        plomadoCanvas.height =
-            rh;
-    }
-
-    const c =
-        plomadoCanvas.getContext('2d');
-
-    c.setTransform(
-        dpr,
-        0,
-        0,
-        dpr,
-        0,
-        0
-    );
-
-    c.clearRect(
-        0,
-        0,
-        w,
-        h
-    );
-
-    dibujarTransportadorEnContexto(
-        c,
-        w,
-        h,
-        plomadoGrados,
-        {
-            mostrarPendulo: true,
-            escala: 1
-        }
-    );
-
-    plomadoReading.textContent =
+    plomadoReading.textContent=
         `PLOMADO: ${Math.abs(plomadoGrados).toFixed(2)}°`;
 
-    const sentido =
-        Math.abs(plomadoGrados) < 0.005
+    const sentido=
+        Math.abs(plomadoGrados)<.005
             ? 'CENTRADO'
-            : plomadoGrados > 0
+            : plomadoGrados>0
                 ? 'DERECHA'
                 : 'IZQUIERDA';
 
-    plomadoHelp.textContent =
+    plomadoHelp.textContent=
         `Péndulo: ${Math.abs(plomadoGrados).toFixed(2)}° ${sentido}`;
 }
 
-/* =========================================================
-   ACTUALIZAR PLOMADO
-   ========================================================= */
+function actualizarPlomado(){
 
-function actualizarPlomado() {
+    if(modo!=='plomado')return;
 
-    if (modo !== 'plomado') {
-        return;
-    }
+    plomadoGrados=calcularAnguloPendulo();
 
-    plomadoGrados =
-        calcularAnguloPendulo();
-
-    const orientacion =
-        obtenerOrientacionPantalla();
-
-    const orientacionTexto =
-        orientacion === 0 ||
-        orientacion === 180
-            ? 'VERTICAL'
-            : 'HORIZONTAL';
-
-    sensorHud.textContent =
-        gravityReady || orientationReady
-            ? `Sensores: ACTIVOS | ${orientacionTexto} | ${plomadoGrados.toFixed(2)}°`
+    sensorHud.textContent=
+        gravityReady
+            ? `Sensores: ACTIVOS | péndulo ${plomadoGrados.toFixed(2)}°`
             : 'Sensores: esperando…';
 
-    if (plomadoActivo) {
+    if(plomadoActivo)
         dibujarTransportador();
-    }
 }
 
 /* =========================================================
-   ACTIVAR PLOMADO
-   ========================================================= */
+   CAMARA
+========================================================= */
 
-function activarPlomadoVisual() {
+async function iniciarCamara(){
 
-    if (modo !== 'plomado') {
-        return;
-    }
+    try{
 
-    plomadoActivo =
-        true;
+        if(cameraStream)detenerCamara();
 
-    plomadoOverlay.style.display =
-        'block';
+        setStatus('Solicitando permiso de cámara…');
 
-    dibujarTransportador();
-}
+        cameraStream=
+            await navigator.mediaDevices.getUserMedia({
 
-/* =========================================================
-   CÁMARA
-   ========================================================= */
+                video:{
+                    facingMode:{ideal:'environment'},
+                    width:{ideal:1920},
+                    height:{ideal:1080}
+                },
 
-async function iniciarCamara() {
+                audio:false
+            });
 
-    try {
-
-        if (cameraStream) {
-            detenerCamara();
-        }
-
-        setStatus(
-            'Solicitando permiso de cámara…'
-        );
-
-        cameraStream =
-            await navigator.mediaDevices
-                .getUserMedia({
-
-                    video: {
-
-                        facingMode: {
-                            ideal: 'environment'
-                        },
-
-                        width: {
-                            ideal: 1920
-                        },
-
-                        height: {
-                            ideal: 1080
-                        }
-                    },
-
-                    audio: false
-                });
-
-        video.srcObject =
-            cameraStream;
+        video.srcObject=cameraStream;
 
         await video.play();
 
-        takeButton.disabled =
-            false;
+        takeButton.disabled=false;
 
         cargarLogo();
 
@@ -2071,337 +978,135 @@ async function iniciarCamara() {
         configurarModo();
 
         setStatus(
-            modo === 'medir'
-                ? '📏 MEDIR POSTE: captura la foto y marca R1, R2, BASE y PUNTA.'
-                : modo === 'plomado'
+            modo==='medir'
+                ? '📏 MEDIR POSTE: escribe la medida real y después marca los puntos.'
+                : modo==='plomado'
                     ? '📐 PLOMADO: alinea el poste con el péndulo.'
                     : '✅ Cámara lista.'
         );
 
-    } catch (e) {
+    }catch(e){
 
         console.error(e);
 
         setStatus(
-            '❌ NO FUE POSIBLE ABRIR LA CÁMARA.\n' +
-            (e.name || '') +
-            '\n' +
-            (e.message || e)
+            '❌ NO FUE POSIBLE ABRIR LA CÁMARA.\n'+
+            (e.name||'')+'\n'+
+            (e.message||e)
         );
 
-        takeButton.disabled =
-            true;
+        takeButton.disabled=true;
     }
 }
 
 /* =========================================================
-   CONFIGURAR MODO
-   ========================================================= */
+   MODO
+========================================================= */
 
-function configurarModo() {
+function configurarModo(){
 
-    modeBadge.textContent =
-        modo === 'medir'
+    modeBadge.textContent=
+        modo==='medir'
             ? '📏 MEDIR POSTE'
-            : modo === 'plomado'
+            : modo==='plomado'
                 ? '📐 PLOMADO POSTE'
-                : '📷 ' +
-                  nombreTipo(tipo);
+                : '📷 '+nombreTipo(tipo);
 
-    signalButton.style.display =
-        modo === 'normal'
+    signalButton.style.display=
+        modo==='normal'
             ? 'inline-block'
             : 'none';
 
-    if (modo === 'medir') {
+    if(modo==='medir'){
 
-        specialPanel.style.display =
-            'block';
+        specialPanel.style.display='block';
 
-        specialHelp.textContent =
-            'Escribe la medida real del objeto sólido conocido. Luego toma la foto.';
+        specialHelp.textContent=
+            'Escribe la medida real del objeto de referencia. Después pulsa CONTINUAR y toma la fotografía.';
     }
 
-    if (modo === 'plomado') {
+    if(modo==='plomado'){
 
-        activarPlomadoVisual();
+        plomadoActivo=true;
+        plomadoOverlay.style.display='block';
+        dibujarTransportador();
     }
 }
 
 /* =========================================================
    GPS
-   ========================================================= */
+========================================================= */
 
-function obtenerGPS() {
+function obtenerGPS(){
 
-    return new Promise(resolve => {
+    return new Promise(resolve=>{
 
-        if (!navigator.geolocation) {
+        if(!navigator.geolocation)
             return resolve(null);
-        }
 
         navigator.geolocation.getCurrentPosition(
-            p => resolve({
 
-                lat:
-                    p.coords.latitude,
-
-                lng:
-                    p.coords.longitude,
-
-                accuracy:
-                    p.coords.accuracy
+            p=>resolve({
+                lat:p.coords.latitude,
+                lng:p.coords.longitude,
+                accuracy:p.coords.accuracy
             }),
 
-            () => resolve(null),
+            ()=>resolve(null),
 
             {
-                enableHighAccuracy: true,
-                timeout: 10000,
-                maximumAge: 0
+                enableHighAccuracy:true,
+                timeout:10000,
+                maximumAge:0
             }
         );
     });
 }
 
 /* =========================================================
-   CAPTURA BASE
-   ========================================================= */
+   CAPTURA
+========================================================= */
 
-function capturaBase() {
+function capturaBase(){
 
-    const w =
-        video.videoWidth;
+    const w=video.videoWidth;
+    const h=video.videoHeight;
 
-    const h =
-        video.videoHeight;
+    if(!w||!h)
+        throw new Error('La cámara todavía no está lista.');
 
-    if (!w || !h) {
+    canvas.width=w;
+    canvas.height=h;
 
-        throw new Error(
-            'La cámara todavía no está lista.'
-        );
-    }
-
-    canvas.width =
-        w;
-
-    canvas.height =
-        h;
-
-    const ctx =
-        canvas.getContext('2d');
+    const ctx=canvas.getContext('2d');
 
     ctx.drawImage(
         video,
-        0,
-        0,
-        w,
-        h
+        0,0,w,h
     );
 
     return ctx;
 }
 
 /* =========================================================
-   DIBUJAR PLOMADO SOBRE LA FOTO
-   =========================================================
+   FOTO
+========================================================= */
 
-   Aquí está la corrección importante:
+async function tomarFoto(){
 
-   El transportador que ves en pantalla también se
-   dibuja sobre la fotografía que se guarda.
+    try{
 
-   No dependemos del canvas HTML visible.
-   Lo volvemos a dibujar directamente sobre la foto.
-   ========================================================= */
+        if(!cameraStream)
+            throw new Error('La cámara no está iniciada.');
 
-function dibujarPlomadoEnFoto(
-    ctx,
-    w,
-    h
-) {
+        gpsActual=await obtenerGPS();
+        fechaFoto=new Date();
 
-    /*
-     * Para la foto usamos una versión proporcional
-     * al tamaño real de la fotografía.
-     */
+        /* ================= NORMAL ================= */
 
-    const escala =
-        Math.min(
-            w / 900,
-            h / 1600
-        );
+        if(modo==='normal'){
 
-    dibujarTransportadorEnContexto(
-        ctx,
-        w,
-        h,
-        plomadoGrados,
-        {
-            mostrarPendulo: true,
-            escala: clamp(
-                escala,
-                .55,
-                1.45
-            )
-        }
-    );
-
-    /*
-     * Caja pequeña de lectura dentro de la foto.
-     */
-
-    const font =
-        Math.max(
-            26,
-            Math.round(
-                Math.min(w, h) * .035
-            )
-        );
-
-    const texto =
-        `PLOMADO: ${Math.abs(plomadoGrados).toFixed(2)}°`;
-
-    const sentido =
-        Math.abs(plomadoGrados) < .005
-            ? 'CENTRADO'
-            : plomadoGrados > 0
-                ? 'DERECHA'
-                : 'IZQUIERDA';
-
-    ctx.save();
-
-    ctx.font =
-        `bold ${font}px Arial`;
-
-    const tw =
-        ctx.measureText(texto).width;
-
-    const pad =
-        Math.round(font * .55);
-
-    const x =
-        w / 2 -
-        (tw + pad * 2) / 2;
-
-    const y =
-        h * .43;
-
-    ctx.fillStyle =
-        'rgba(0,0,0,.72)';
-
-    ctx.beginPath();
-
-    ctx.roundRect(
-        x,
-        y,
-        tw + pad * 2,
-        font + pad * 1.5,
-        12
-    );
-
-    ctx.fill();
-
-    ctx.fillStyle =
-        '#fff';
-
-    ctx.textAlign =
-        'center';
-
-    ctx.textBaseline =
-        'middle';
-
-    ctx.fillText(
-        texto,
-        w / 2,
-        y +
-        (font + pad * 1.5) / 2
-    );
-
-    /*
-     * Dirección.
-     */
-
-    const dirTexto =
-        sentido;
-
-    const dirFont =
-        Math.max(
-            18,
-            Math.round(font * .55)
-        );
-
-    ctx.font =
-        `bold ${dirFont}px Arial`;
-
-    const dy =
-        y +
-        font +
-        pad * 1.5 +
-        dirFont +
-        12;
-
-    const dtw =
-        ctx.measureText(
-            dirTexto
-        ).width;
-
-    ctx.fillStyle =
-        'rgba(0,0,0,.65)';
-
-    ctx.fillRect(
-        w / 2 -
-        dtw / 2 -
-        10,
-        dy -
-        dirFont / 2 -
-        7,
-        dtw + 20,
-        dirFont + 14
-    );
-
-    ctx.fillStyle =
-        '#fff';
-
-    ctx.fillText(
-        dirTexto,
-        w / 2,
-        dy
-    );
-
-    ctx.restore();
-}
-
-/* =========================================================
-   TOMAR FOTO
-   ========================================================= */
-
-async function tomarFoto() {
-
-    try {
-
-        if (!cameraStream) {
-
-            throw new Error(
-                'La cámara no está iniciada.'
-            );
-        }
-
-        gpsActual =
-            await obtenerGPS();
-
-        fechaFoto =
-            new Date();
-
-        /*
-         * NORMAL
-         */
-
-        if (modo === 'normal') {
-
-            const ctx =
-                capturaBase();
+            const ctx=capturaBase();
 
             dibujarEstampado(
                 ctx,
@@ -2409,40 +1114,51 @@ async function tomarFoto() {
                 canvas.height
             );
 
-            fotoBase =
-                canvas.toDataURL(
-                    'image/jpeg',
-                    .92
-                );
+            fotoBase=canvas.toDataURL(
+                'image/jpeg',
+                .92
+            );
 
-            if (modoSenalar) {
+            if(modoSenalar){
 
                 abrirEditorFlecha();
-
                 return;
             }
 
             enviarFotoFinal(
                 fotoBase,
-                {
-                    modo: 'normal'
-                }
+                {modo:'normal'}
             );
 
             return;
         }
 
-        /*
-         * MEDIR
-         */
+        /* ================= MEDICION ================= */
 
-        if (modo === 'medir') {
+        if(modo==='medir'){
 
-            specialPanel.style.display =
-                'none';
+            if(
+                !referenceReal||
+                referenceReal<=0
+            ){
 
-            const ctx =
-                capturaBase();
+                specialPanel.style.display='block';
+
+                alert(
+                    'Primero captura la medida real del objeto de referencia.'
+                );
+
+                return;
+            }
+
+            specialPanel.style.display='none';
+
+            const ctx=capturaBase();
+
+            /*
+               Primero guardamos la fotografía limpia
+               con su estampado normal.
+            */
 
             dibujarEstampado(
                 ctx,
@@ -2450,32 +1166,24 @@ async function tomarFoto() {
                 canvas.height
             );
 
-            fotoBase =
-                canvas.toDataURL(
-                    'image/jpeg',
-                    .92
-                );
+            fotoBase=canvas.toDataURL(
+                'image/jpeg',
+                .92
+            );
 
             abrirEditorMedicion();
 
             return;
         }
 
-        /*
-         * PLOMADO
-         */
+        /* ================= PLOMADO ================= */
 
-        if (modo === 'plomado') {
+        if(modo==='plomado'){
 
-            /*
-             * Capturamos la lectura justo al presionar FOTO.
-             */
-
-            plomadoGrados =
-                calcularAnguloPendulo();
+            plomadoGrados=calcularAnguloPendulo();
 
             setStatus(
-                `📐 Lectura capturada: ${Math.abs(plomadoGrados).toFixed(2)}°. Guardando foto…`
+                `📐 Lectura capturada: ${Math.abs(plomadoGrados).toFixed(2)}°. Guardando…`
             );
 
             confirmarPlomado();
@@ -2483,149 +1191,788 @@ async function tomarFoto() {
             return;
         }
 
-    } catch (e) {
+    }catch(e){
 
         console.error(e);
 
         setStatus(
-            '❌ ERROR AL TOMAR FOTO\n' +
-            e.message
+            '❌ ERROR AL TOMAR FOTO\n'+e.message
         );
     }
 }
 
 /* =========================================================
-   EDITOR DE MEDICIÓN
-   ========================================================= */
+   EDITOR DE MEDICION DE POSTE
+========================================================= */
 
-let measureEditor = null;
+let measureEditor=null;
+let measureCanvas=null;
+let measureCtx=null;
 
-function abrirEditorMedicion() {
+let measurePoints={
+    r1:null,
+    r2:null,
+    base:null,
+    punta:null
+};
 
-    if (!measureEditor) {
+let measureStep='r1';
 
-        measureEditor =
-            document.createElement('div');
+function abrirEditorMedicion(){
 
-        measureEditor.style.cssText =
-            `
-            position:absolute;
-            inset:0;
-            z-index:25;
-            background:#000;
-            overflow:hidden;
-            touch-action:none;
-            `;
+    cerrarEditorMedicion();
+
+    measureEditor=document.createElement('div');
+    measureEditor.className='measureEditor';
+
+    measureCanvas=document.createElement('canvas');
+    measureCanvas.className='measureCanvas';
+
+    measureEditor.appendChild(measureCanvas);
+
+    const instruction=document.createElement('div');
+    instruction.className='measureInstruction';
+    instruction.id='measureInstruction';
+
+    measureEditor.appendChild(instruction);
+
+    const toolbar=document.createElement('div');
+    toolbar.className='measureToolbar';
+
+    const undo=document.createElement('button');
+    undo.id='measureUndo';
+    undo.textContent='↩ DESHACER';
+
+    const finish=document.createElement('button');
+    finish.id='measureFinish';
+    finish.textContent='✅ TERMINAR';
+
+    const cancel=document.createElement('button');
+    cancel.id='measureCancel';
+    cancel.textContent='❌ CANCELAR';
+
+    toolbar.appendChild(undo);
+    toolbar.appendChild(finish);
+    toolbar.appendChild(cancel);
+
+    measureEditor.appendChild(toolbar);
+
+    document
+        .getElementById('cameraContainer')
+        .appendChild(measureEditor);
+
+    const im=new Image();
+
+    im.onload=()=>{
+
+        measureCanvas.width=im.naturalWidth;
+        measureCanvas.height=im.naturalHeight;
+
+        ajustarCanvasMedicion();
+        dibujarEditorMedicion();
+
+        measureCanvas.addEventListener(
+            'pointerdown',
+            manejarClickMedicion
+        );
+
+        undo.addEventListener(
+            'click',
+            deshacerMedicion
+        );
+
+        finish.addEventListener(
+            'click',
+            finalizarMedicion
+        );
+
+        cancel.addEventListener(
+            'click',
+            ()=>{
+                cerrarEditorMedicion();
+                setStatus(
+                    'Medición cancelada. Puedes tomar otra fotografía.'
+                );
+            }
+        );
+
+        actualizarInstruccion();
+    };
+
+    im.src=fotoBase;
+
+    takeButton.style.display='none';
+    signalButton.style.display='none';
+    cancelButton.style.display='none';
+}
+
+/* =========================================================
+   AJUSTE DEL CANVAS DE MEDICION
+========================================================= */
+
+function ajustarCanvasMedicion(){
+
+    if(!measureCanvas)return;
+
+    const container=
+        document.getElementById('cameraContainer');
+
+    const cw=container.clientWidth;
+    const ch=container.clientHeight;
+
+    const iw=measureCanvas.width;
+    const ih=measureCanvas.height;
+
+    const escala=Math.min(
+        cw/iw,
+        ch/ih
+    );
+
+    const dw=iw*escala;
+    const dh=ih*escala;
+
+    measureCanvas.style.width=dw+'px';
+    measureCanvas.style.height=dh+'px';
+
+    measureCanvas.style.left=
+        ((cw-dw)/2)+'px';
+
+    measureCanvas.style.top=
+        ((ch-dh)/2)+'px';
+}
+
+/* =========================================================
+   PUNTOS
+========================================================= */
+
+function puntoMedicion(e){
+
+    const r=measureCanvas.getBoundingClientRect();
+
+    return{
+        x:
+            (e.clientX-r.left)*
+            measureCanvas.width/
+            r.width,
+
+        y:
+            (e.clientY-r.top)*
+            measureCanvas.height/
+            r.height
+    };
+}
+
+function manejarClickMedicion(e){
+
+    e.preventDefault();
+
+    const p=puntoMedicion(e);
+
+    /*
+       El orden es:
+       R1 -> R2 -> BASE -> PUNTA
+    */
+
+    if(measureStep==='r1'){
+
+        measurePoints.r1=p;
+        measureStep='r2';
+
+    }else if(measureStep==='r2'){
+
+        measurePoints.r2=p;
+        measureStep='base';
+
+    }else if(measureStep==='base'){
+
+        measurePoints.base=p;
+        measureStep='punta';
+
+    }else if(measureStep==='punta'){
+
+        measurePoints.punta=p;
+        measureStep='done';
     }
 
-    measureEditor.innerHTML = '';
+    dibujarEditorMedicion();
+    actualizarInstruccion();
+}
 
-    const c =
-        document.createElement('canvas');
+/* =========================================================
+   INSTRUCCIONES
+========================================================= */
 
-    c.width =
-        canvas.width;
+function actualizarInstruccion(){
 
-    c.height =
-        canvas.height;
+    const el=
+        document.getElementById(
+            'measureInstruction'
+        );
 
-    c.style.cssText =
-        `
-        position:absolute;
-        max-width:100%;
-        max-height:100%;
-        width:100%;
-        height:100%;
-        object-fit:contain;
-        left:0;
-        top:0;
-        `;
+    if(!el)return;
 
-    const ctx =
-        c.getContext('2d');
+    if(measureStep==='r1'){
 
-    const im =
-        new Image();
+        el.textContent=
+            '📍 Toca el primer extremo del objeto de referencia: R1';
 
-    im.onload = () => {
+    }else if(measureStep==='r2'){
+
+        el.textContent=
+            '📍 Toca el segundo extremo del objeto de referencia: R2';
+
+    }else if(measureStep==='base'){
+
+        el.textContent=
+            '📍 Toca la BASE del poste';
+
+    }else if(measureStep==='punta'){
+
+        el.textContent=
+            '📍 Toca la PUNTA del poste';
+
+    }else{
+
+        const r=calcularMedicion();
+
+        el.textContent=
+            r
+                ? `📏 ALTURA ESTIMADA: ${r.altura.toFixed(2)} m — pulsa TERMINAR para guardar`
+                : 'Revisa los puntos marcados.';
+    }
+}
+
+/* =========================================================
+   DIBUJAR EDITOR
+========================================================= */
+
+function dibujarEditorMedicion(){
+
+    if(!measureCanvas)return;
+
+    const c=measureCanvas.getContext('2d');
+
+    c.clearRect(
+        0,
+        0,
+        measureCanvas.width,
+        measureCanvas.height
+    );
+
+    const im=new Image();
+
+    im.onload=()=>{
+
+        c.drawImage(
+            im,
+            0,
+            0,
+            measureCanvas.width,
+            measureCanvas.height
+        );
+
+        const p=measurePoints;
+
+        /* referencia */
+
+        if(p.r1&&p.r2){
+
+            c.beginPath();
+            c.moveTo(p.r1.x,p.r1.y);
+            c.lineTo(p.r2.x,p.r2.y);
+
+            c.strokeStyle='#ff9800';
+            c.lineWidth=Math.max(
+                4,
+                measureCanvas.width/500
+            );
+            c.stroke();
+        }
+
+        /* linea del poste */
+
+        if(p.base&&p.punta){
+
+            c.beginPath();
+            c.moveTo(p.base.x,p.base.y);
+            c.lineTo(p.punta.x,p.punta.y);
+
+            c.strokeStyle='#00e5ff';
+            c.lineWidth=Math.max(
+                4,
+                measureCanvas.width/500
+            );
+            c.stroke();
+        }
+
+        dibujarPuntoCanvas(
+            c,
+            p.r1,
+            '#ff9800',
+            'R1'
+        );
+
+        dibujarPuntoCanvas(
+            c,
+            p.r2,
+            '#9c27b0',
+            'R2'
+        );
+
+        dibujarPuntoCanvas(
+            c,
+            p.base,
+            '#00aaff',
+            'BASE'
+        );
+
+        dibujarPuntoCanvas(
+            c,
+            p.punta,
+            '#00c853',
+            'PUNTA'
+        );
+
+        /*
+           Línea de altura
+        */
+
+        if(p.base&&p.punta){
+
+            c.beginPath();
+
+            c.moveTo(
+                p.base.x,
+                p.base.y
+            );
+
+            c.lineTo(
+                p.punta.x,
+                p.punta.y
+            );
+
+            c.strokeStyle='#00ff88';
+            c.lineWidth=Math.max(
+                3,
+                measureCanvas.width/700
+            );
+            c.stroke();
+        }
+    };
+
+    im.src=fotoBase;
+}
+
+function dibujarPuntoCanvas(c,p,color,text){
+
+    if(!p)return;
+
+    const r=Math.max(
+        15,
+        measureCanvas.width/80
+    );
+
+    c.beginPath();
+    c.arc(
+        p.x,
+        p.y,
+        r,
+        0,
+        Math.PI*2
+    );
+
+    c.fillStyle=color;
+    c.fill();
+
+    c.strokeStyle='#fff';
+    c.lineWidth=3;
+    c.stroke();
+
+    c.fillStyle='#fff';
+    c.font=
+        `bold ${Math.max(14,r*.7)}px Arial`;
+
+    c.textAlign='center';
+    c.textBaseline='middle';
+
+    c.fillText(
+        text,
+        p.x,
+        p.y
+    );
+}
+
+/* =========================================================
+   CALCULO MEDICION
+========================================================= */
+
+function distancia(a,b){
+
+    return Math.hypot(
+        b.x-a.x,
+        b.y-a.y
+    );
+}
+
+function calcularMedicion(){
+
+    const p=measurePoints;
+
+    if(
+        !p.r1||
+        !p.r2||
+        !p.base||
+        !p.punta||
+        !referenceReal
+    )return null;
+
+    const referenciaPx=
+        distancia(p.r1,p.r2);
+
+    const postePx=
+        distancia(p.base,p.punta);
+
+    if(
+        referenciaPx<=0||
+        postePx<=0
+    )return null;
+
+    /*
+       Escala:
+       metros por pixel =
+       medida real / pixels de referencia
+    */
+
+    const metrosPorPixel=
+        referenceReal/referenciaPx;
+
+    const altura=
+        postePx*metrosPorPixel;
+
+    return{
+        referenciaPx,
+        postePx,
+        metrosPorPixel,
+        altura
+    };
+}
+
+/* =========================================================
+   DESHACER
+========================================================= */
+
+function deshacerMedicion(){
+
+    if(measureStep==='done'){
+
+        measurePoints.punta=null;
+        measureStep='punta';
+
+    }else if(measureStep==='punta'){
+
+        measurePoints.base=null;
+        measureStep='base';
+
+    }else if(measureStep==='base'){
+
+        measurePoints.r2=null;
+        measureStep='r2';
+
+    }else if(measureStep==='r2'){
+
+        measurePoints.r1=null;
+        measureStep='r1';
+    }
+
+    dibujarEditorMedicion();
+    actualizarInstruccion();
+}
+
+/* =========================================================
+   FINALIZAR MEDICION
+========================================================= */
+
+function finalizarMedicion(){
+
+    const resultado=calcularMedicion();
+
+    if(!resultado){
+
+        alert(
+            'Debes marcar R1, R2, BASE y PUNTA antes de terminar.'
+        );
+
+        return;
+    }
+
+    /*
+       Se vuelve a dibujar sobre una nueva imagen
+       para generar la fotografía final.
+    */
+
+    const finalCanvas=document.createElement('canvas');
+
+    finalCanvas.width=canvas.width;
+    finalCanvas.height=canvas.height;
+
+    const ctx=finalCanvas.getContext('2d');
+
+    const im=new Image();
+
+    im.onload=()=>{
 
         ctx.drawImage(
             im,
             0,
             0,
-            c.width,
-            c.height
+            finalCanvas.width,
+            finalCanvas.height
         );
 
-        measureEditor.appendChild(c);
+        /*
+           Referencia R1-R2
+        */
 
-        document
-            .getElementById('cameraContainer')
-            .appendChild(measureEditor);
+        ctx.beginPath();
 
-        setStatus(
-            '📏 En esta versión conserva el flujo de medición del poste.'
+        ctx.moveTo(
+            measurePoints.r1.x,
+            measurePoints.r1.y
+        );
+
+        ctx.lineTo(
+            measurePoints.r2.x,
+            measurePoints.r2.y
+        );
+
+        ctx.strokeStyle='#ff9800';
+        ctx.lineWidth=Math.max(
+            4,
+            finalCanvas.width/500
+        );
+        ctx.stroke();
+
+        /*
+           Línea del poste
+        */
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+            measurePoints.base.x,
+            measurePoints.base.y
+        );
+
+        ctx.lineTo(
+            measurePoints.punta.x,
+            measurePoints.punta.y
+        );
+
+        ctx.strokeStyle='#00e5ff';
+        ctx.lineWidth=Math.max(
+            4,
+            finalCanvas.width/500
+        );
+        ctx.stroke();
+
+        /*
+           Puntos
+        */
+
+        dibujarPuntoCanvasFinal(
+            ctx,
+            measurePoints.r1,
+            '#ff9800',
+            'R1',
+            finalCanvas.width
+        );
+
+        dibujarPuntoCanvasFinal(
+            ctx,
+            measurePoints.r2,
+            '#9c27b0',
+            'R2',
+            finalCanvas.width
+        );
+
+        dibujarPuntoCanvasFinal(
+            ctx,
+            measurePoints.base,
+            '#00aaff',
+            'BASE',
+            finalCanvas.width
+        );
+
+        dibujarPuntoCanvasFinal(
+            ctx,
+            measurePoints.punta,
+            '#00c853',
+            'PUNTA',
+            finalCanvas.width
+        );
+
+        /*
+           Estampado de medición.
+           Se hace UNA SOLA VEZ.
+        */
+
+        dibujarEstampado(
+            ctx,
+            finalCanvas.width,
+            finalCanvas.height,
+            [
+                `REFERENCIA REAL: ${referenceReal.toFixed(3)} m`,
+                `REFERENCIA MEDIDA: ${resultado.referenciaPx.toFixed(1)} px`,
+                `POSTE MEDIDO: ${resultado.postePx.toFixed(1)} px`,
+                `ALTURA ESTIMADA: ${resultado.altura.toFixed(2)} m`
+            ]
+        );
+
+        const dataURL=
+            finalCanvas.toDataURL(
+                'image/jpeg',
+                .92
+            );
+
+        cerrarEditorMedicion();
+
+        fotoBase=dataURL;
+
+        enviarFotoFinal(
+            dataURL,
+            {
+                modo:'medir',
+
+                medicion:{
+                    referenciaReal:
+                        Number(
+                            referenceReal.toFixed(3)
+                        ),
+
+                    referenciaPixeles:
+                        Number(
+                            resultado.referenciaPx.toFixed(2)
+                        ),
+
+                    postePixeles:
+                        Number(
+                            resultado.postePx.toFixed(2)
+                        ),
+
+                    altura:
+                        Number(
+                            resultado.altura.toFixed(2)
+                        )
+                }
+            }
         );
     };
 
-    im.src =
-        fotoBase;
+    im.src=fotoBase;
+}
+
+function dibujarPuntoCanvasFinal(
+    c,
+    p,
+    color,
+    text,
+    w
+){
+
+    const r=Math.max(
+        15,
+        w/80
+    );
+
+    c.beginPath();
+
+    c.arc(
+        p.x,
+        p.y,
+        r,
+        0,
+        Math.PI*2
+    );
+
+    c.fillStyle=color;
+    c.fill();
+
+    c.strokeStyle='#fff';
+    c.lineWidth=3;
+    c.stroke();
+
+    c.fillStyle='#fff';
+
+    c.font=
+        `bold ${Math.max(14,r*.7)}px Arial`;
+
+    c.textAlign='center';
+    c.textBaseline='middle';
+
+    c.fillText(
+        text,
+        p.x,
+        p.y
+    );
 }
 
 /* =========================================================
-   CONFIRMAR PLOMADO
-   ========================================================= */
+   CERRAR EDITOR MEDICION
+========================================================= */
 
-function confirmarPlomado() {
+function cerrarEditorMedicion(){
 
-    /*
-     * Primero ocultamos el overlay.
-     *
-     * Esto NO afecta la fotografía.
-     * La gráfica se dibuja nuevamente directamente
-     * sobre el canvas de la fotografía.
-     */
+    if(measureEditor){
 
-    plomadoOverlay.style.display =
-        'none';
+        measureEditor.remove();
+        measureEditor=null;
+    }
 
-    plomadoActivo =
-        false;
+    measureCanvas=null;
+    measureCtx=null;
 
-    /*
-     * NUEVA captura limpia.
-     */
+    measurePoints={
+        r1:null,
+        r2:null,
+        base:null,
+        punta:null
+    };
 
-    const ctx =
-        capturaBase();
+    measureStep='r1';
 
-    /*
-     * PRIMERO:
-     * transportador + péndulo.
-     */
+    if(modo!=='normal'){
+        takeButton.style.display='inline-block';
+    }
 
-    dibujarPlomadoEnFoto(
-        ctx,
-        canvas.width,
-        canvas.height
-    );
+    cancelButton.style.display='inline-block';
 
-    /*
-     * DESPUÉS:
-     * estampado UNA SOLA VEZ.
-     */
+    if(modo==='normal')
+        signalButton.style.display='inline-block';
+}
 
-    const grados =
-        Math.abs(
-            plomadoGrados
-        );
+/* =========================================================
+   PLOMADO
+========================================================= */
 
-    const direccion =
-        Math.abs(plomadoGrados) < .005
+function confirmarPlomado(){
+
+    plomadoOverlay.style.display='none';
+    plomadoActivo=false;
+
+    const grados=Math.abs(plomadoGrados);
+
+    const direccion=
+        Math.abs(plomadoGrados)<.005
             ? 'CENTRADO'
-            : plomadoGrados > 0
+            : plomadoGrados>0
                 ? 'DERECHA'
                 : 'IZQUIERDA';
+
+    const ctx=capturaBase();
+
+    /*
+       SOLO UN ESTAMPADO.
+    */
 
     dibujarEstampado(
         ctx,
@@ -2637,854 +1984,54 @@ function confirmarPlomado() {
         ]
     );
 
-    fotoBase =
-        canvas.toDataURL(
-            'image/jpeg',
-            .92
-        );
+    fotoBase=canvas.toDataURL(
+        'image/jpeg',
+        .92
+    );
 
     enviarFotoFinal(
         fotoBase,
         {
-            modo: 'plomado',
+            modo:'plomado',
 
-            plomado: {
-
-                grados:
-                    Number(
-                        grados.toFixed(2)
-                    ),
+            plomado:{
+                grados:Number(
+                    grados.toFixed(2)
+                ),
 
                 direccion,
 
-                anguloFirmado:
-                    Number(
-                        plomadoGrados.toFixed(2)
-                    )
+                anguloFirmado:Number(
+                    plomadoGrados.toFixed(2)
+                )
             }
         }
     );
 }
 
 /* =========================================================
-   FLECHA
-   ========================================================= */
+   ENVIO
+========================================================= */
 
-let arrowEditor = null;
-let arrowCanvas = null;
+function enviarFotoFinal(dataURL,extra={}){
 
-function abrirEditorFlecha() {
+    preview.src=dataURL;
+    preview.style.display='block';
 
-    crearEditorFlechaDOM();
+    const mensaje={
 
-    const im =
-        new Image();
+        type:'CAMERA_STAMP_PHOTO',
 
-    im.onload = () => {
+        tipo:String(tipo||'').trim(),
 
-        arrowCanvas.width =
-            im.naturalWidth;
+        fileName:crearNombreFoto(
+            tipo,
+            fechaFoto||new Date()
+        ),
 
-        arrowCanvas.height =
-            im.naturalHeight;
+        mimeType:'image/jpeg',
 
-        ajustarCanvasFlecha();
-
-        arrowEditor.style.display =
-            'block';
-
-        dibujarFlecha();
-
-        iniciarGestosFlecha();
-    };
-
-    im.src =
-        fotoBase;
-}
-
-function crearEditorFlechaDOM() {
-
-    if (arrowEditor) {
-        return;
-    }
-
-    arrowEditor =
-        document.createElement('div');
-
-    arrowEditor.id =
-        'arrowEditor';
-
-    arrowEditor.style.cssText =
-        `
-        position:absolute;
-        inset:0;
-        z-index:25;
-        background:#000;
-        touch-action:none;
-        overflow:hidden;
-        overscroll-behavior:none;
-        user-select:none;
-        -webkit-user-select:none;
-        -webkit-touch-callout:none;
-        `;
-
-    arrowCanvas =
-        document.createElement('canvas');
-
-    arrowCanvas.id =
-        'arrowCanvas';
-
-    arrowCanvas.style.cssText =
-        `
-        display:block;
-        position:absolute;
-        touch-action:none;
-        user-select:none;
-        -webkit-user-select:none;
-        -webkit-touch-callout:none;
-        margin:0;
-        padding:0;
-        `;
-
-    arrowEditor.appendChild(
-        arrowCanvas
-    );
-
-    document
-        .getElementById('cameraContainer')
-        .appendChild(
-            arrowEditor
-        );
-
-    signalButton.style.display =
-        'none';
-
-    takeButton.style.display =
-        'none';
-
-    confirmButton.style.display =
-        'inline-block';
-
-    cancelSignalButton.style.display =
-        'inline-block';
-
-    cancelButton.style.display =
-        'none';
-
-    setStatus(
-        '🎯 Toca la foto para colocar la flecha. Un dedo mueve; dos dedos giran/cambian tamaño.'
-    );
-
-    flechaX = null;
-    flechaY = null;
-    flechaAngulo = 0;
-    flechaEscala = 1;
-}
-
-function ajustarCanvasFlecha() {
-
-    if (
-        !arrowCanvas ||
-        !arrowCanvas.width ||
-        !arrowCanvas.height
-    ) {
-        return;
-    }
-
-    const container =
-        document.getElementById(
-            'cameraContainer'
-        );
-
-    const cw =
-        container.clientWidth;
-
-    const ch =
-        container.clientHeight;
-
-    const iw =
-        arrowCanvas.width;
-
-    const ih =
-        arrowCanvas.height;
-
-    const escala =
-        Math.min(
-            cw / iw,
-            ch / ih
-        );
-
-    const displayW =
-        iw * escala;
-
-    const displayH =
-        ih * escala;
-
-    arrowCanvas.style.width =
-        `${displayW}px`;
-
-    arrowCanvas.style.height =
-        `${displayH}px`;
-
-    arrowCanvas.style.left =
-        `${(cw - displayW) / 2}px`;
-
-    arrowCanvas.style.top =
-        `${(ch - displayH) / 2}px`;
-}
-
-function puntoArrow(e) {
-
-    const r =
-        arrowCanvas.getBoundingClientRect();
-
-    const p =
-        e.touches
-            ? e.touches[0]
-            : e;
-
-    return {
-
-        x:
-            (p.clientX - r.left) *
-            arrowCanvas.width /
-            r.width,
-
-        y:
-            (p.clientY - r.top) *
-            arrowCanvas.height /
-            r.height
-    };
-}
-
-function puntoRect(
-    x,
-    y,
-    r
-) {
-
-    return (
-        r &&
-        x >= r.x &&
-        x <= r.x + r.width &&
-        y >= r.y &&
-        y <= r.y + r.height
-    );
-}
-
-function arrowBlocked(
-    x,
-    y,
-    ang,
-    scale
-) {
-
-    const f =
-        Math.max(
-            arrowCanvas.width,
-            arrowCanvas.height
-        ) / 1200;
-
-    const len =
-        150 *
-        f *
-        scale;
-
-    const sx =
-        x -
-        len *
-        Math.cos(
-            ang +
-            Math.PI / 4
-        );
-
-    const sy =
-        y -
-        len *
-        Math.sin(
-            ang +
-            Math.PI / 4
-        );
-
-    for (
-        let i = 0;
-        i <= 18;
-        i++
-    ) {
-
-        const t =
-            i / 18;
-
-        const px =
-            sx +
-            (x - sx) *
-            t;
-
-        const py =
-            sy +
-            (y - sy) *
-            t;
-
-        if (
-            puntoRect(
-                px,
-                py,
-                zonaLogo
-            ) ||
-            puntoRect(
-                px,
-                py,
-                zonaEstampado
-            )
-        ) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-function dibujarFlecha() {
-
-    if (!arrowCanvas) {
-        return;
-    }
-
-    const im =
-        new Image();
-
-    im.onload = () => {
-
-        const c =
-            arrowCanvas.getContext('2d');
-
-        c.clearRect(
-            0,
-            0,
-            arrowCanvas.width,
-            arrowCanvas.height
-        );
-
-        c.drawImage(
-            im,
-            0,
-            0,
-            arrowCanvas.width,
-            arrowCanvas.height
-        );
-
-        if (flechaX == null) {
-            return;
-        }
-
-        const f =
-            Math.max(
-                arrowCanvas.width,
-                arrowCanvas.height
-            ) / 1200;
-
-        const len =
-            150 *
-            f *
-            flechaEscala;
-
-        const tip =
-            32 *
-            f *
-            flechaEscala;
-
-        const sx =
-            flechaX -
-            len *
-            Math.cos(
-                flechaAngulo +
-                Math.PI / 4
-            );
-
-        const sy =
-            flechaY -
-            len *
-            Math.sin(
-                flechaAngulo +
-                Math.PI / 4
-            );
-
-        c.beginPath();
-
-        c.moveTo(
-            sx,
-            sy
-        );
-
-        c.lineTo(
-            flechaX,
-            flechaY
-        );
-
-        c.strokeStyle =
-            '#000';
-
-        c.lineWidth =
-            Math.max(
-                12,
-                13 *
-                f *
-                flechaEscala
-            );
-
-        c.lineCap =
-            'round';
-
-        c.stroke();
-
-        c.beginPath();
-
-        c.moveTo(
-            sx,
-            sy
-        );
-
-        c.lineTo(
-            flechaX,
-            flechaY
-        );
-
-        c.strokeStyle =
-            '#00ff00';
-
-        c.lineWidth =
-            Math.max(
-                7,
-                9 *
-                f *
-                flechaEscala
-            );
-
-        c.stroke();
-
-        const a =
-            Math.atan2(
-                flechaY - sy,
-                flechaX - sx
-            );
-
-        c.beginPath();
-
-        c.moveTo(
-            flechaX,
-            flechaY
-        );
-
-        c.lineTo(
-            flechaX -
-            tip *
-            Math.cos(
-                a - Math.PI / 6
-            ),
-            flechaY -
-            tip *
-            Math.sin(
-                a - Math.PI / 6
-            )
-        );
-
-        c.lineTo(
-            flechaX -
-            tip *
-            Math.cos(
-                a + Math.PI / 6
-            ),
-            flechaY -
-            tip *
-            Math.sin(
-                a + Math.PI / 6
-            )
-        );
-
-        c.closePath();
-
-        c.fillStyle =
-            '#00ff00';
-
-        c.fill();
-
-        c.strokeStyle =
-            '#000';
-
-        c.lineWidth =
-            Math.max(
-                3,
-                4 *
-                f *
-                flechaEscala
-            );
-
-        c.stroke();
-    };
-
-    im.src =
-        fotoBase;
-}
-
-/* =========================================================
-   GESTOS FLECHA
-   ========================================================= */
-
-function iniciarGestosFlecha() {
-
-    if (
-        !arrowCanvas ||
-        arrowCanvas.dataset.ready
-    ) {
-        return;
-    }
-
-    arrowCanvas.dataset.ready =
-        '1';
-
-    arrowCanvas.addEventListener(
-        'touchstart',
-        e => {
-
-            e.preventDefault();
-
-            if (
-                e.touches.length === 1
-            ) {
-
-                const p =
-                    puntoArrow(e);
-
-                if (
-                    flechaX == null
-                ) {
-
-                    if (
-                        arrowBlocked(
-                            p.x,
-                            p.y,
-                            0,
-                            1
-                        )
-                    ) {
-
-                        return alert(
-                            '🚫 La flecha no puede cubrir el logo ni el estampado.'
-                        );
-                    }
-
-                    flechaX =
-                        p.x;
-
-                    flechaY =
-                        p.y;
-
-                    dibujarFlecha();
-                }
-
-                gestoActivo =
-                    true;
-
-                toqueInicial = {
-                    tipo: 'move',
-                    x: p.x,
-                    y: p.y,
-                    x0: flechaX,
-                    y0: flechaY
-                };
-
-            } else if (
-                e.touches.length === 2 &&
-                flechaX != null
-            ) {
-
-                const a =
-                    puntoArrow(
-                        e.touches[0]
-                    );
-
-                const b =
-                    puntoArrow(
-                        e.touches[1]
-                    );
-
-                toqueInicial = {
-
-                    tipo: 'transform',
-
-                    dist:
-                        Math.hypot(
-                            b.x - a.x,
-                            b.y - a.y
-                        ),
-
-                    ang:
-                        Math.atan2(
-                            b.y - a.y,
-                            b.x - a.x
-                        ),
-
-                    x0:
-                        flechaX,
-
-                    y0:
-                        flechaY,
-
-                    s:
-                        flechaEscala,
-
-                    r:
-                        flechaAngulo
-                };
-
-                gestoActivo =
-                    true;
-            }
-        },
-        {
-            passive: false
-        }
-    );
-
-    arrowCanvas.addEventListener(
-        'touchmove',
-        e => {
-
-            e.preventDefault();
-
-            if (!gestoActivo) {
-                return;
-            }
-
-            if (
-                e.touches.length === 1 &&
-                toqueInicial?.tipo === 'move'
-            ) {
-
-                const p =
-                    puntoArrow(e);
-
-                const nx =
-                    toqueInicial.x0 +
-                    p.x -
-                    toqueInicial.x;
-
-                const ny =
-                    toqueInicial.y0 +
-                    p.y -
-                    toqueInicial.y;
-
-                if (
-                    !arrowBlocked(
-                        nx,
-                        ny,
-                        flechaAngulo,
-                        flechaEscala
-                    )
-                ) {
-
-                    flechaX =
-                        nx;
-
-                    flechaY =
-                        ny;
-
-                    dibujarFlecha();
-                }
-
-            } else if (
-                e.touches.length === 2 &&
-                toqueInicial?.tipo === 'transform'
-            ) {
-
-                const a =
-                    puntoArrow(
-                        e.touches[0]
-                    );
-
-                const b =
-                    puntoArrow(
-                        e.touches[1]
-                    );
-
-                const dist =
-                    Math.hypot(
-                        b.x - a.x,
-                        b.y - a.y
-                    );
-
-                const ang =
-                    Math.atan2(
-                        b.y - a.y,
-                        b.x - a.x
-                    );
-
-                const s =
-                    clamp(
-                        toqueInicial.s *
-                        dist /
-                        toqueInicial.dist,
-                        .35,
-                        3
-                    );
-
-                const r =
-                    toqueInicial.r +
-                    ang -
-                    toqueInicial.ang;
-
-                if (
-                    !arrowBlocked(
-                        toqueInicial.x0,
-                        toqueInicial.y0,
-                        r,
-                        s
-                    )
-                ) {
-
-                    flechaEscala =
-                        s;
-
-                    flechaAngulo =
-                        r;
-
-                    dibujarFlecha();
-                }
-            }
-        },
-        {
-            passive: false
-        }
-    );
-
-    arrowCanvas.addEventListener(
-        'touchend',
-        e => {
-
-            if (!e.touches.length) {
-
-                gestoActivo =
-                    false;
-
-                toqueInicial =
-                    null;
-            }
-        },
-        {
-            passive: false
-        }
-    );
-}
-
-/* =========================================================
-   CERRAR FLECHA
-   ========================================================= */
-
-function cerrarEditorFlecha() {
-
-    if (arrowEditor) {
-
-        arrowEditor.remove();
-
-        arrowEditor =
-            null;
-
-        arrowCanvas =
-            null;
-    }
-
-    confirmButton.style.display =
-        'none';
-
-    cancelSignalButton.style.display =
-        'none';
-
-    takeButton.style.display =
-        'inline-block';
-
-    cancelButton.style.display =
-        'inline-block';
-
-    signalButton.style.display =
-        'inline-block';
-}
-
-/* =========================================================
-   MEDIDA REAL
-   ========================================================= */
-
-measureStart.addEventListener(
-    'click',
-    () => {
-
-        const v =
-            Number(
-                knownMeasure.value
-            );
-
-        if (
-            !Number.isFinite(v) ||
-            v <= 0
-        ) {
-
-            return alert(
-                'Captura una medida real mayor que cero.'
-            );
-        }
-
-        referenceReal =
-            v;
-
-        specialPanel.style.display =
-            'none';
-
-        setStatus(
-            'Medida guardada: ' +
-            v +
-            ' m. Ahora toma la fotografía.'
-        );
-
-        takeButton.disabled =
-            false;
-    }
-);
-
-/* =========================================================
-   ENVÍO
-   ========================================================= */
-
-function enviarFotoFinal(
-    dataURL,
-    extra = {}
-) {
-
-    preview.src =
-        dataURL;
-
-    preview.style.display =
-        'block';
-
-    const mensaje = {
-
-        type:
-            'CAMERA_STAMP_PHOTO',
-
-        tipo:
-            String(tipo || '')
-                .trim(),
-
-        fileName:
-            crearNombreFoto(
-                tipo,
-                fechaFoto ||
-                new Date()
-            ),
-
-        mimeType:
-            'image/jpeg',
-
-        data:
-            dataURL,
+        data:dataURL,
 
         latitud:
             gpsActual
@@ -3498,100 +2045,79 @@ function enviarFotoFinal(
 
         modo,
 
-        metadata: {
-
+        metadata:{
             proyecto,
-
             tipoProyecto,
-
             hub,
-
             rama,
 
             tipoFoto:
                 nombreTipo(tipo),
 
-            fecha:
-                (
-                    fechaFoto ||
-                    new Date()
-                ).toISOString(),
+            fecha:(
+                fechaFoto||new Date()
+            ).toISOString(),
 
-            gps:
-                gpsActual
+            gps:gpsActual
         },
 
         ...extra
     };
 
-    let confirmado =
-        false;
+    let confirmado=false;
 
-    const cerrarTrasAck =
-        e => {
+    const cerrarTrasAck=e=>{
 
-            if (
-                !e ||
-                !e.data ||
-                e.data.type !==
-                'CAMERA_STAMP_ACK'
-            ) {
-                return;
-            }
+        if(
+            !e||
+            !e.data||
+            e.data.type!=='CAMERA_STAMP_ACK'
+        )return;
 
-            if (
-                e.data.fileName &&
-                e.data.fileName !==
-                mensaje.fileName
-            ) {
-                return;
-            }
+        if(
+            e.data.fileName&&
+            e.data.fileName!==mensaje.fileName
+        )return;
 
-            confirmado =
-                true;
+        confirmado=true;
 
-            window.removeEventListener(
-                'message',
-                cerrarTrasAck
-            );
+        window.removeEventListener(
+            'message',
+            cerrarTrasAck
+        );
 
-            setStatus(
-                '✅ FOTO RECIBIDA POR EL FORMULARIO.'
-            );
+        setStatus(
+            '✅ FOTO RECIBIDA POR EL FORMULARIO.'
+        );
 
-            detenerCamara();
+        detenerCamara();
 
-            setTimeout(
-                () => {
+        setTimeout(()=>{
 
-                    try {
+            try{
 
-                        if (
-                            window.opener &&
-                            !window.opener.closed
-                        ) {
+                if(
+                    window.opener&&
+                    !window.opener.closed
+                )
+                    window.opener.focus();
 
-                            window.opener.focus();
-                        }
+                window.close();
 
-                        window.close();
+            }catch(_){}
 
-                    } catch (_) {}
-
-                },
-                150
-            );
-        };
+        },150);
+    };
 
     window.addEventListener(
         'message',
         cerrarTrasAck
     );
 
-    if (
-        window.opener &&
+    if(
+        window.opener&&
         !window.opener.closed
-    ) {
+    ){
 
         window.opener.postMessage(
             mensaje,
@@ -3602,7 +2128,7 @@ function enviarFotoFinal(
             '📤 Enviando fotografía al formulario…'
         );
 
-    } else {
+    }else{
 
         window.removeEventListener(
             'message',
@@ -3616,102 +2142,48 @@ function enviarFotoFinal(
         return;
     }
 
-    setTimeout(
-        () => {
+    setTimeout(()=>{
 
-            if (confirmado) {
-                return;
+        if(confirmado)return;
+
+        window.removeEventListener(
+            'message',
+            cerrarTrasAck
+        );
+
+        setStatus(
+            '✅ FOTO ENVIADA AL FORMULARIO.'
+        );
+
+        detenerCamara();
+
+        try{
+
+            if(
+                window.opener&&
+                !window.opener.closed
+            ){
+
+                window.opener.focus();
             }
 
-            window.removeEventListener(
-                'message',
-                cerrarTrasAck
-            );
+            window.close();
 
-            setStatus(
-                '✅ FOTO ENVIADA AL FORMULARIO.'
-            );
+        }catch(_){}
 
-            detenerCamara();
-
-            try {
-
-                if (
-                    window.opener &&
-                    !window.opener.closed
-                ) {
-
-                    window.opener.focus();
-                }
-
-                window.close();
-
-            } catch (_) {}
-
-        },
-        2500
-    );
-}
-
-/* =========================================================
-   DETENER CÁMARA
-   ========================================================= */
-
-function detenerCamara() {
-
-    if (cameraStream) {
-
-        cameraStream
-            .getTracks()
-            .forEach(
-                t => t.stop()
-            );
-
-        cameraStream =
-            null;
-    }
-
-    video.srcObject =
-        null;
-
-    takeButton.disabled =
-        true;
-
-    if (motionHandler) {
-
-        window.removeEventListener(
-            'devicemotion',
-            motionHandler
-        );
-
-        motionHandler =
-            null;
-    }
-
-    if (orientationHandler) {
-
-        window.removeEventListener(
-            'deviceorientation',
-            orientationHandler
-        );
-
-        orientationHandler =
-            null;
-    }
+    },2500);
 }
 
 /* =========================================================
    SEÑALAR
-   ========================================================= */
+========================================================= */
 
 signalButton.addEventListener(
     'click',
-    () => {
+    ()=>{
+        modoSenalar=!modoSenalar;
 
-        modoSenalar =
-            !modoSenalar;
-
-        signalButton.textContent =
+        signalButton.textContent=
             modoSenalar
                 ? '🎯 ACTIVO'
                 : '🎯 SEÑALAR';
@@ -3725,8 +2197,42 @@ signalButton.addEventListener(
 );
 
 /* =========================================================
+   MEDIDA REAL
+========================================================= */
+
+measureStart.addEventListener(
+    'click',
+    ()=>{
+
+        const v=Number(
+            knownMeasure.value
+        );
+
+        if(
+            !Number.isFinite(v)||
+            v<=0
+        ){
+
+            alert(
+                'Captura una medida real mayor que cero.'
+            );
+
+            return;
+        }
+
+        referenceReal=v;
+
+        specialPanel.style.display='none';
+
+        setStatus(
+            `Medida de referencia: ${v} m. Ahora pulsa FOTO y marca R1, R2, BASE y PUNTA.`
+        );
+    }
+);
+
+/* =========================================================
    FOTO
-   ========================================================= */
+========================================================= */
 
 takeButton.addEventListener(
     'click',
@@ -3735,165 +2241,128 @@ takeButton.addEventListener(
 
 /* =========================================================
    SALIR
-   ========================================================= */
+========================================================= */
 
 cancelButton.addEventListener(
     'click',
-    () => {
+    ()=>{
 
         detenerCamara();
 
-        if (
-            window.opener &&
-            !window.opener.closed
-        ) {
+        try{
 
-            window.close();
-        }
+            if(
+                window.opener&&
+                !window.opener.closed
+            )
+                window.close();
+
+        }catch(_){}
     }
 );
 
 /* =========================================================
-   CONFIRMAR FLECHA
-   ========================================================= */
+   DETENER CAMARA
+========================================================= */
 
-confirmButton.addEventListener(
-    'click',
-    () => {
+function detenerCamara(){
 
-        if (flechaX == null) {
+    if(cameraStream){
 
-            return alert(
-                'Primero toca la imagen para colocar la flecha.'
-            );
-        }
+        cameraStream
+            .getTracks()
+            .forEach(t=>t.stop());
 
-        const data =
-            arrowCanvas.toDataURL(
-                'image/jpeg',
-                .92
-            );
+        cameraStream=null;
+    }
 
-        cerrarEditorFlecha();
+    video.srcObject=null;
+    takeButton.disabled=true;
 
-        enviarFotoFinal(
-            data,
-            {
-                modo: 'normal',
+    if(motionHandler){
 
-                metadata: {
-
-                    flecha: {
-
-                        x:
-                            flechaX,
-
-                        y:
-                            flechaY,
-
-                        angulo:
-                            flechaAngulo,
-
-                        escala:
-                            flechaEscala
-                    }
-                }
-            }
+        window.removeEventListener(
+            'devicemotion',
+            motionHandler
         );
+
+        motionHandler=null;
     }
-);
 
-/* =========================================================
-   CANCELAR FLECHA
-   ========================================================= */
+    if(orientationHandler){
 
-cancelSignalButton.addEventListener(
-    'click',
-    () => {
-
-        cerrarEditorFlecha();
-
-        fotoBase =
-            null;
-
-        setStatus(
-            'Se canceló el señalamiento. Puedes tomar otra fotografía.'
+        window.removeEventListener(
+            'deviceorientation',
+            orientationHandler
         );
+
+        orientationHandler=null;
     }
-);
+}
 
 /* =========================================================
-   RESIZE
-   ========================================================= */
+   RESIZE / ORIENTACION
+========================================================= */
+
+function actualizarInterfaz(){
+
+    if(measureCanvas)
+        ajustarCanvasMedicion();
+
+    if(modo==='plomado')
+        dibujarTransportador();
+}
 
 window.addEventListener(
     'resize',
-    () => {
+    actualizarInterfaz
+);
 
-        if (
-            arrowEditor &&
-            arrowCanvas
-        ) {
+if(screen.orientation){
 
-            ajustarCanvasFlecha();
-        }
-
-        if (
-            modo === 'plomado'
-        ) {
-
+    screen.orientation.addEventListener(
+        'change',
+        ()=>{
             setTimeout(
-                () => {
-
-                    actualizarPlomado();
-                    dibujarTransportador();
-
-                },
-                50
+                actualizarInterfaz,
+                100
             );
         }
-    }
-);
+    );
+}
 
 /* =========================================================
    INICIO
-   ========================================================= */
+========================================================= */
 
 window.addEventListener(
     'load',
-    async () => {
+    async()=>{
 
-        modeBadge.textContent =
-            modo === 'medir'
+        modeBadge.textContent=
+            modo==='medir'
                 ? '📏 MEDIR POSTE'
-                : modo === 'plomado'
+                : modo==='plomado'
                     ? '📐 PLOMADO POSTE'
-                    : '📷 ' +
-                      nombreTipo(tipo);
+                    : '📷 '+nombreTipo(tipo);
 
-        if (modo === 'medir') {
+        if(modo==='medir'){
 
-            specialPanel.style.display =
-                'block';
+            specialPanel.style.display='block';
 
-            specialHelp.textContent =
-                'Captura la medida real del objeto conocido. La referencia y el poste deben estar aproximadamente a la misma distancia/plano para reducir error de perspectiva.';
+            specialHelp.textContent=
+                'Captura la medida real del objeto conocido. Después pulsa CONTINUAR, toma la foto y marca R1, R2, BASE y PUNTA.';
         }
 
-        if (modo === 'plomado') {
+        if(modo==='plomado'){
 
-            plomadoOverlay.style.display =
-                'block';
-
-            plomadoActivo =
-                true;
+            plomadoOverlay.style.display='block';
+            plomadoActivo=true;
 
             dibujarTransportador();
         }
 
-        setStatus(
-            'Abriendo cámara…'
-        );
+        setStatus('Abriendo cámara…');
 
         await iniciarCamara();
     }
