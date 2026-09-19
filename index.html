@@ -1380,9 +1380,9 @@ async function tomarFoto(){
 
             if(modoSenalar){
 
-                abrirEditorFlecha();
-                return;
-            }
+    abrirEditorFlecha();
+    return;
+}
 
             enviarFotoFinal(
                 fotoBase,
@@ -3039,7 +3039,803 @@ function actualizarInterfazFlecha(){
         ajustarCanvasFlecha();
 }
 
+/* =========================================================
+   EDITOR DE FLECHA TACTIL
+   - 1 dedo: mover
+   - 2 dedos: girar y cambiar longitud/tamaño
+========================================================= */
 
+let flechaEditor=null;
+let flechaCanvas=null;
+let flechaCtx=null;
+
+let flechaTouch={
+    activos:new Map(),
+    centroX:0,
+    centroY:0,
+    distancia:0,
+    angulo:0,
+    escalaInicial:1,
+    rotacionInicial:0,
+    xInicial:0,
+    yInicial:0
+};
+
+function abrirEditorFlecha(){
+
+    if(!fotoBase){
+        setStatus('❌ No existe fotografía base.');
+        return;
+    }
+
+    if(flechaEditor)
+        cerrarEditorFlecha();
+
+    flechaEditor=document.createElement('div');
+
+    flechaEditor.className='measureEditor';
+    flechaEditor.style.touchAction='none';
+
+    flechaCanvas=document.createElement('canvas');
+    flechaCanvas.className='measureCanvas';
+    flechaCanvas.style.touchAction='none';
+
+    flechaEditor.appendChild(flechaCanvas);
+
+    const instruccion=document.createElement('div');
+
+    instruccion.className='measureInstruction';
+
+    instruccion.textContent=
+        '🎯 1 dedo: MOVER • 2 dedos: GIRAR y HACER MÁS GRANDE/LARGA';
+
+    flechaEditor.appendChild(instruccion);
+
+    const toolbar=document.createElement('div');
+
+    toolbar.className='measureToolbar';
+
+    const undo=document.createElement('button');
+
+    undo.textContent='↩ CENTRAR';
+
+    undo.style.background='#607d8b';
+    undo.style.color='#fff';
+
+    const finish=document.createElement('button');
+
+    finish.textContent='✅ USAR';
+    finish.style.background='#4caf50';
+    finish.style.color='#fff';
+
+    const cancel=document.createElement('button');
+
+    cancel.textContent='❌ CANCELAR';
+    cancel.style.background='#b71c1c';
+    cancel.style.color='#fff';
+
+    toolbar.appendChild(undo);
+    toolbar.appendChild(finish);
+    toolbar.appendChild(cancel);
+
+    flechaEditor.appendChild(toolbar);
+
+    document
+        .getElementById('cameraContainer')
+        .appendChild(flechaEditor);
+
+    const im=new Image();
+
+    im.onload=()=>{
+
+        flechaCanvas.width=im.naturalWidth;
+        flechaCanvas.height=im.naturalHeight;
+
+        ajustarCanvasFlecha();
+
+        /*
+           Posición inicial:
+           centro de la fotografía
+        */
+
+        flechaX=flechaCanvas.width/2;
+        flechaY=flechaCanvas.height/2;
+
+        flechaAngulo=0;
+        flechaEscala=1;
+
+        dibujarEditorFlecha();
+
+        flechaCanvas.addEventListener(
+            'pointerdown',
+            flechaPointerDown
+        );
+
+        flechaCanvas.addEventListener(
+            'pointermove',
+            flechaPointerMove
+        );
+
+        flechaCanvas.addEventListener(
+            'pointerup',
+            flechaPointerUp
+        );
+
+        flechaCanvas.addEventListener(
+            'pointercancel',
+            flechaPointerUp
+        );
+
+        undo.addEventListener(
+            'click',
+            ()=>{
+                flechaX=flechaCanvas.width/2;
+                flechaY=flechaCanvas.height/2;
+                flechaAngulo=0;
+                flechaEscala=1;
+
+                dibujarEditorFlecha();
+            }
+        );
+
+        finish.addEventListener(
+            'click',
+            finalizarFlecha
+        );
+
+        cancel.addEventListener(
+            'click',
+            ()=>{
+                cerrarEditorFlecha();
+
+                setStatus(
+                    'Señal cancelada. Puedes tomar otra fotografía.'
+                );
+            }
+        );
+    };
+
+    im.src=fotoBase;
+
+    takeButton.style.display='none';
+    signalButton.style.display='none';
+    cancelButton.style.display='none';
+}
+
+
+/* =========================================================
+   AJUSTAR CANVAS FLECHA
+========================================================= */
+
+function ajustarCanvasFlecha(){
+
+    if(!flechaCanvas)
+        return;
+
+    const container=
+        document.getElementById(
+            'cameraContainer'
+        );
+
+    const cw=container.clientWidth;
+    const ch=container.clientHeight;
+
+    const iw=flechaCanvas.width;
+    const ih=flechaCanvas.height;
+
+    const escala=Math.min(
+        cw/iw,
+        ch/ih
+    );
+
+    const dw=iw*escala;
+    const dh=ih*escala;
+
+    flechaCanvas.style.width=
+        dw+'px';
+
+    flechaCanvas.style.height=
+        dh+'px';
+
+    flechaCanvas.style.left=
+        ((cw-dw)/2)+'px';
+
+    flechaCanvas.style.top=
+        ((ch-dh)/2)+'px';
+}
+
+
+/* =========================================================
+   DIBUJAR EDITOR
+========================================================= */
+
+function dibujarEditorFlecha(){
+
+    if(!flechaCanvas||!fotoBase)
+        return;
+
+    const c=flechaCanvas.getContext('2d');
+
+    const im=new Image();
+
+    im.onload=()=>{
+
+        c.clearRect(
+            0,
+            0,
+            flechaCanvas.width,
+            flechaCanvas.height
+        );
+
+        c.drawImage(
+            im,
+            0,
+            0,
+            flechaCanvas.width,
+            flechaCanvas.height
+        );
+
+        dibujarFlecha(
+            c,
+            flechaX,
+            flechaY,
+            flechaAngulo,
+            flechaEscala,
+            flechaCanvas.width
+        );
+    };
+
+    im.src=fotoBase;
+}
+
+
+/* =========================================================
+   FLECHA
+========================================================= */
+
+function dibujarFlecha(
+    c,
+    x,
+    y,
+    angulo,
+    escala,
+    w
+){
+
+    /*
+       La flecha apunta hacia arriba.
+       La longitud aumenta con escala.
+    */
+
+    const longitud=
+        Math.max(
+            120,
+            w*.22*escala
+        );
+
+    const ancho=
+        Math.max(
+            22,
+            w*.035*escala
+        );
+
+    c.save();
+
+    c.translate(x,y);
+    c.rotate(angulo);
+
+    /*
+       SOMBRA / CONTORNO
+    */
+
+    c.strokeStyle='rgba(0,0,0,.85)';
+    c.lineWidth=ancho+12;
+    c.lineCap='round';
+    c.lineJoin='round';
+
+    c.beginPath();
+
+    c.moveTo(
+        0,
+        longitud*.48
+    );
+
+    c.lineTo(
+        0,
+        -longitud*.40
+    );
+
+    c.stroke();
+
+    /*
+       CUERPO
+    */
+
+    c.strokeStyle='#ff3030';
+    c.lineWidth=ancho;
+    c.lineCap='round';
+
+    c.beginPath();
+
+    c.moveTo(
+        0,
+        longitud*.48
+    );
+
+    c.lineTo(
+        0,
+        -longitud*.40
+    );
+
+    c.stroke();
+
+    /*
+       PUNTA
+    */
+
+    c.fillStyle='#ff3030';
+
+    c.beginPath();
+
+    c.moveTo(
+        0,
+        -longitud*.52
+    );
+
+    c.lineTo(
+        -ancho*1.8,
+        -longitud*.20
+    );
+
+    c.lineTo(
+        ancho*1.8,
+        -longitud*.20
+    );
+
+    c.closePath();
+
+    c.fill();
+
+    /*
+       CONTORNO DE LA PUNTA
+    */
+
+    c.strokeStyle='rgba(0,0,0,.85)';
+    c.lineWidth=5;
+    c.stroke();
+
+    c.restore();
+}
+
+
+/* =========================================================
+   GESTOS
+========================================================= */
+
+function obtenerPuntoDosDedos(){
+
+    const puntos=[
+        ...flechaTouch.activos.values()
+    ];
+
+    if(puntos.length<2)
+        return null;
+
+    const a=puntos[0];
+    const b=puntos[1];
+
+    const centroX=
+        (a.x+b.x)/2;
+
+    const centroY=
+        (a.y+b.y)/2;
+
+    const dx=b.x-a.x;
+    const dy=b.y-a.y;
+
+    const distancia=Math.hypot(dx,dy);
+
+    const angulo=Math.atan2(dy,dx);
+
+    return{
+        centroX,
+        centroY,
+        distancia,
+        angulo
+    };
+}
+
+
+/* =========================================================
+   POINTER DOWN
+========================================================= */
+
+function flechaPointerDown(e){
+
+    e.preventDefault();
+
+    flechaCanvas.setPointerCapture(
+        e.pointerId
+    );
+
+    const r=
+        flechaCanvas.getBoundingClientRect();
+
+    const x=
+        (e.clientX-r.left)*
+        flechaCanvas.width/
+        r.width;
+
+    const y=
+        (e.clientY-r.top)*
+        flechaCanvas.height/
+        r.height;
+
+    flechaTouch.activos.set(
+        e.pointerId,
+        {
+            x,
+            y
+        }
+    );
+
+    if(flechaTouch.activos.size===1){
+
+        /*
+           Guardamos posición para movimiento
+        */
+
+        flechaTouch.xInicial=x;
+        flechaTouch.yInicial=y;
+
+        flechaTouch.flechaXInicial=
+            flechaX;
+
+        flechaTouch.flechaYInicial=
+            flechaY;
+
+    }else if(flechaTouch.activos.size===2){
+
+        const p=
+            obtenerPuntoDosDedos();
+
+        if(!p)
+            return;
+
+        flechaTouch.centroX=p.centroX;
+        flechaTouch.centroY=p.centroY;
+        flechaTouch.distancia=p.distancia;
+        flechaTouch.angulo=p.angulo;
+
+        flechaTouch.escalaInicial=
+            flechaEscala;
+
+        flechaTouch.rotacionInicial=
+            flechaAngulo;
+
+        flechaTouch.flechaXInicial=
+            flechaX;
+
+        flechaTouch.flechaYInicial=
+            flechaY;
+    }
+}
+
+
+/* =========================================================
+   POINTER MOVE
+========================================================= */
+
+function flechaPointerMove(e){
+
+    e.preventDefault();
+
+    if(!flechaTouch.activos.has(e.pointerId))
+        return;
+
+    const r=
+        flechaCanvas.getBoundingClientRect();
+
+    const x=
+        (e.clientX-r.left)*
+        flechaCanvas.width/
+        r.width;
+
+    const y=
+        (e.clientY-r.top)*
+        flechaCanvas.height/
+        r.height;
+
+    flechaTouch.activos.set(
+        e.pointerId,
+        {
+            x,
+            y
+        }
+    );
+
+    /*
+       ============================
+       1 DEDO = MOVER
+       ============================
+    */
+
+    if(flechaTouch.activos.size===1){
+
+        flechaX=
+            flechaTouch.flechaXInicial+
+            (x-flechaTouch.xInicial);
+
+        flechaY=
+            flechaTouch.flechaYInicial+
+            (y-flechaTouch.yInicial);
+
+        limitarFlecha();
+
+        dibujarEditorFlecha();
+
+        return;
+    }
+
+    /*
+       ============================
+       2 DEDOS
+       ============================
+       Pinza = longitud/tamaño
+       Giro = rotación
+       Centro = movimiento
+    */
+
+    if(flechaTouch.activos.size===2){
+
+        const p=
+            obtenerPuntoDosDedos();
+
+        if(!p)
+            return;
+
+        /*
+           CAMBIO DE ESCALA
+        */
+
+        const factor=
+            p.distancia/
+            Math.max(
+                1,
+                flechaTouch.distancia
+            );
+
+        flechaEscala=
+            clamp(
+                flechaTouch.escalaInicial*
+                factor,
+                .35,
+                4
+            );
+
+        /*
+           GIRO
+        */
+
+        flechaAngulo=
+            flechaTouch.rotacionInicial+
+            (
+                p.angulo-
+                flechaTouch.angulo
+            );
+
+        /*
+           MOVIMIENTO DEL CENTRO
+        */
+
+        flechaX=
+            flechaTouch.flechaXInicial+
+            (
+                p.centroX-
+                flechaTouch.centroX
+            );
+
+        flechaY=
+            flechaTouch.flechaYInicial+
+            (
+                p.centroY-
+                flechaTouch.centroY
+            );
+
+        limitarFlecha();
+
+        dibujarEditorFlecha();
+    }
+}
+
+
+/* =========================================================
+   POINTER UP
+========================================================= */
+
+function flechaPointerUp(e){
+
+    e.preventDefault();
+
+    flechaTouch.activos.delete(
+        e.pointerId
+    );
+
+    /*
+       Si queda un dedo,
+       reiniciamos su referencia
+       para que pueda seguir moviendo
+       sin brincar.
+    */
+
+    if(flechaTouch.activos.size===1){
+
+        const p=
+            [...flechaTouch.activos.values()][0];
+
+        flechaTouch.xInicial=p.x;
+        flechaTouch.yInicial=p.y;
+
+        flechaTouch.flechaXInicial=
+            flechaX;
+
+        flechaTouch.flechaYInicial=
+            flechaY;
+    }
+}
+
+
+/* =========================================================
+   LIMITAR FLECHA
+========================================================= */
+
+function limitarFlecha(){
+
+    if(!flechaCanvas)
+        return;
+
+    const margen=
+        flechaCanvas.width*.03;
+
+    flechaX=
+        clamp(
+            flechaX,
+            margen,
+            flechaCanvas.width-margen
+        );
+
+    flechaY=
+        clamp(
+            flechaY,
+            margen,
+            flechaCanvas.height-margen
+        );
+}
+
+
+/* =========================================================
+   FINALIZAR FLECHA
+========================================================= */
+
+function finalizarFlecha(){
+
+    if(!fotoBase)
+        return;
+
+    const finalCanvas=
+        document.createElement('canvas');
+
+    finalCanvas.width=
+        canvas.width;
+
+    finalCanvas.height=
+        canvas.height;
+
+    const ctx=
+        finalCanvas.getContext('2d');
+
+    const im=new Image();
+
+    im.onload=()=>{
+
+        /*
+           FOTO ORIGINAL
+        */
+
+        ctx.drawImage(
+            im,
+            0,
+            0,
+            finalCanvas.width,
+            finalCanvas.height
+        );
+
+        /*
+           FLECHA
+        */
+
+        dibujarFlecha(
+            ctx,
+            flechaX,
+            flechaY,
+            flechaAngulo,
+            flechaEscala,
+            finalCanvas.width
+        );
+
+        /*
+           ESTAMPADO
+        */
+
+        dibujarEstampado(
+            ctx,
+            finalCanvas.width,
+            finalCanvas.height,
+            [
+                'SEÑALAMIENTO: FLECHA'
+            ]
+        );
+
+        const dataURL=
+            finalCanvas.toDataURL(
+                'image/jpeg',
+                .92
+            );
+
+        cerrarEditorFlecha();
+
+        fotoBase=dataURL;
+
+        enviarFotoFinal(
+            dataURL,
+            {
+                modo:'normal',
+                senalamiento:{
+                    tipo:'flecha',
+                    x:Number(
+                        flechaX.toFixed(1)
+                    ),
+                    y:Number(
+                        flechaY.toFixed(1)
+                    ),
+                    angulo:Number(
+                        flechaAngulo.toFixed(4)
+                    ),
+                    escala:Number(
+                        flechaEscala.toFixed(3)
+                    )
+                }
+            }
+        );
+    };
+
+    im.src=fotoBase;
+}
+
+
+/* =========================================================
+   CERRAR EDITOR FLECHA
+========================================================= */
+
+function cerrarEditorFlecha(){
+
+    if(flechaEditor){
+
+        flechaEditor.remove();
+        flechaEditor=null;
+    }
+
+    flechaCanvas=null;
+    flechaCtx=null;
+
+    flechaTouch.activos.clear();
+
+    takeButton.style.display='inline-block';
+    cancelButton.style.display='inline-block';
+
+    if(modo==='normal')
+        signalButton.style.display='inline-block';
+}
 
     
 /* =========================================================
