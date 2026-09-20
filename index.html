@@ -674,6 +674,7 @@ function dibujarLogo(ctx,w,h){
 function dibujarEstampado(ctx,w,h,extra=[]){
 
     const s=Math.max(w,h)/1200;
+
     const pad=Math.round(16*s);
     const font=Math.max(16,Math.round(20*s));
     const line=27*s;
@@ -693,16 +694,46 @@ function dibujarEstampado(ctx,w,h,extra=[]){
         ...extra
     ];
 
+    ctx.save();
+
     ctx.font=`bold ${font}px Arial`;
+    ctx.textAlign='left';
+    ctx.textBaseline='top';
+
+    /*
+       Calcular el ancho real de todas las líneas.
+       Se agrega un margen adicional para evitar
+       que las líneas de medición queden cortadas.
+    */
 
     let tw=0;
 
     base.forEach(t=>{
-        tw=Math.max(tw,ctx.measureText(t).width);
+        tw=Math.max(
+            tw,
+            ctx.measureText(t).width
+        );
     });
 
-    const bw=tw+pad*2;
-    const bh=base.length*line+pad*2;
+    /*
+       Ancho del recuadro.
+       El texto SIEMPRE empieza exactamente
+       en x + pad.
+    */
+
+    const bw=
+        tw+
+        pad*2;
+
+    const bh=
+        base.length*line+
+        pad*2;
+
+    /*
+       Posición del estampado.
+       Se mantiene pegado a la esquina inferior
+       izquierda de la fotografía.
+    */
 
     const x=pad;
     const y=h-bh-pad;
@@ -714,24 +745,49 @@ function dibujarEstampado(ctx,w,h,extra=[]){
         height:bh+36
     };
 
+    /*
+       Fondo
+    */
+
     ctx.fillStyle='rgba(0,0,0,.48)';
 
     ctx.beginPath();
-    ctx.roundRect(x,y,bw,bh,10*s);
+
+    ctx.roundRect(
+        x,
+        y,
+        bw,
+        bh,
+        10*s
+    );
+
     ctx.fill();
 
+    /*
+       Texto.
+       Todas las líneas utilizan exactamente
+       la misma coordenada inicial.
+    */
+
     ctx.fillStyle='rgba(255,255,255,.96)';
-    ctx.textBaseline='top';
 
     base.forEach((t,i)=>{
+
         ctx.fillText(
             t,
             x+pad,
             y+pad+i*line
         );
+
     });
 
+    /*
+       Logo
+    */
+
     dibujarLogo(ctx,w,h);
+
+    ctx.restore();
 }
 
 /* =========================================================
