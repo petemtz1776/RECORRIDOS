@@ -3571,10 +3571,28 @@ function cerrarEditorFlecha(){
    ENVIO
 ========================================================= */
 
+/* =========================================================
+   ENVIO
+   CORREGIDO:
+   - Envía la foto al formulario padre.
+   - Espera confirmación CAMERA_STAMP_ACK.
+   - NO cierra la cámara antes de recibir confirmación.
+   - Si no llega confirmación, conserva la foto y muestra error.
+========================================================= */
+
 function enviarFotoFinal(
     dataURL,
     extra={}
 ){
+
+    if(!dataURL){
+
+        setStatus(
+            '❌ No existe una fotografía para enviar.'
+        );
+
+        return;
+    }
 
     preview.src=dataURL;
     preview.style.display='block';
@@ -3625,9 +3643,34 @@ function enviarFotoFinal(
         ...extra
     };
 
-    let confirmado=false;
+    /*
+       Verificar que realmente existe
+       la ventana que abrió la cámara.
+    */
 
-    const cerrarTrasAck=e=>{
+    const padre=
+        window.opener;
+
+    if(
+        !padre||
+        padre.closed
+    ){
+
+        setStatus(
+            '❌ No se encontró el formulario que abrió la cámara. La foto NO fue guardada.'
+        );
+
+        return;
+    }
+
+    let confirmado=false;
+    let terminado=false;
+
+    /*
+       CONFIRMACIÓN DEL FORMULARIO
+    */
+
+    const recibirACK=e=>{
 
         if(
             !e||
@@ -3636,6 +3679,11 @@ function enviarFotoFinal(
         )
             return;
 
+        /*
+           Si el formulario devuelve nombre de archivo,
+           debe coincidir con el que enviamos.
+        */
+
         if(
             e.data.fileName&&
             e.data.fileName!==mensaje.fileName
@@ -3643,17 +3691,23 @@ function enviarFotoFinal(
             return;
 
         confirmado=true;
+        terminado=true;
 
         window.removeEventListener(
             'message',
-            cerrarTrasAck
+            recibirACK
         );
 
         setStatus(
-            '✅ FOTO RECIBIDA POR EL FORMULARIO.'
+            '✅ FOTO GUARDADA CORRECTAMENTE.'
         );
 
         detenerCamara();
+
+        /*
+           Cerramos solamente DESPUÉS
+           de recibir confirmación.
+        */
 
         setTimeout(()=>{
 
@@ -3662,26 +3716,30 @@ function enviarFotoFinal(
                 if(
                     window.opener&&
                     !window.opener.closed
-                )
+                ){
+
                     window.opener.focus();
+                }
 
                 window.close();
 
             }catch(_){}
-        },150);
+
+        },300);
     };
 
     window.addEventListener(
         'message',
-        cerrarTrasAck
+        recibirACK
     );
 
-    if(
-        window.opener&&
-        !window.opener.closed
-    ){
+    /*
+       ENVIAR FOTO
+    */
 
-        window.opener.postMessage(
+    try{
+
+        padre.postMessage(
             mensaje,
             '*'
         );
@@ -3690,48 +3748,62 @@ function enviarFotoFinal(
             '📤 Enviando fotografía al formulario…'
         );
 
-    }else{
+    }catch(e){
+
+        console.error(
+            'Error enviando fotografía:',
+            e
+        );
 
         window.removeEventListener(
             'message',
-            cerrarTrasAck
+            recibirACK
         );
 
         setStatus(
-            '❌ No se encontró el formulario que abrió la cámara.'
+            '❌ No se pudo enviar la fotografía al formulario.\n'+
+            (e.message||e)
         );
 
         return;
     }
 
+    /*
+       TIEMPO DE ESPERA.
+       
+       Antes eran solamente 2500 ms y después
+       se cerraba aunque no hubiera ACK.
+       
+       Ahora damos más tiempo y NO cerramos
+       la ventana si el formulario no confirma.
+    */
+
     setTimeout(()=>{
 
-        if(confirmado)
+        if(
+            confirmado||
+            terminado
+        )
             return;
 
         window.removeEventListener(
             'message',
-            cerrarTrasAck
+            recibirACK
         );
 
         setStatus(
-            '✅ FOTO ENVIADA AL FORMULARIO.'
+            '⚠️ La foto fue enviada, pero el formulario NO confirmó que la guardó.\n'+
+            'La cámara permanecerá abierta para evitar perder la fotografía.'
         );
 
-        detenerCamara();
+        /*
+           IMPORTANTE:
+           NO detener cámara.
+           NO cerrar ventana.
+           La foto permanece disponible en fotoBase.
+        */
 
-        try{
-
-            if(
-                window.opener&&
-                !window.opener.closed
-            )
-                window.opener.focus();
-
-            window.close();
-
-        }catch(_){}
-    },2500);
+    },10000);
 }
 
 /* =========================================================
