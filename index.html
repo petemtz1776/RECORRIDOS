@@ -3571,15 +3571,6 @@ function cerrarEditorFlecha(){
    ENVIO
 ========================================================= */
 
-/* =========================================================
-   ENVIO
-   CORREGIDO:
-   - Envía la foto al formulario padre.
-   - Espera confirmación CAMERA_STAMP_ACK.
-   - NO cierra la cámara antes de recibir confirmación.
-   - Si no llega confirmación, conserva la foto y muestra error.
-========================================================= */
-
 function enviarFotoFinal(
     dataURL,
     extra={}
@@ -3644,97 +3635,28 @@ function enviarFotoFinal(
     };
 
     /*
-       Verificar que realmente existe
-       la ventana que abrió la cámara.
+       Verificar que existe
+       la ventana del formulario.
     */
 
-    const padre=
+    const padre =
         window.opener;
 
     if(
-        !padre||
+        !padre ||
         padre.closed
     ){
 
         setStatus(
-            '❌ No se encontró el formulario que abrió la cámara. La foto NO fue guardada.'
+            '❌ No se encontró el formulario que abrió la cámara.'
         );
 
         return;
     }
 
-    let confirmado=false;
-    let terminado=false;
-
     /*
-       CONFIRMACIÓN DEL FORMULARIO
-    */
-
-    const recibirACK=e=>{
-
-        if(
-            !e||
-            !e.data||
-            e.data.type!=='CAMERA_STAMP_ACK'
-        )
-            return;
-
-        /*
-           Si el formulario devuelve nombre de archivo,
-           debe coincidir con el que enviamos.
-        */
-
-        if(
-            e.data.fileName&&
-            e.data.fileName!==mensaje.fileName
-        )
-            return;
-
-        confirmado=true;
-        terminado=true;
-
-        window.removeEventListener(
-            'message',
-            recibirACK
-        );
-
-        setStatus(
-            '✅ FOTO GUARDADA CORRECTAMENTE.'
-        );
-
-        detenerCamara();
-
-        /*
-           Cerramos solamente DESPUÉS
-           de recibir confirmación.
-        */
-
-        setTimeout(()=>{
-
-            try{
-
-                if(
-                    window.opener&&
-                    !window.opener.closed
-                ){
-
-                    window.opener.focus();
-                }
-
-                window.close();
-
-            }catch(_){}
-
-        },300);
-    };
-
-    window.addEventListener(
-        'message',
-        recibirACK
-    );
-
-    /*
-       ENVIAR FOTO
+       ENVIAR FOTO DIRECTAMENTE
+       SIN ESPERAR CAMERA_STAMP_ACK
     */
 
     try{
@@ -3745,19 +3667,15 @@ function enviarFotoFinal(
         );
 
         setStatus(
-            '📤 Enviando fotografía al formulario…'
+            '📤 Fotografía enviada al formulario.'
         );
 
-    }catch(e){
+    }
+    catch(e){
 
         console.error(
             'Error enviando fotografía:',
             e
-        );
-
-        window.removeEventListener(
-            'message',
-            recibirACK
         );
 
         setStatus(
@@ -3769,41 +3687,31 @@ function enviarFotoFinal(
     }
 
     /*
-       TIEMPO DE ESPERA.
-       
-       Antes eran solamente 2500 ms y después
-       se cerraba aunque no hubiera ACK.
-       
-       Ahora damos más tiempo y NO cerramos
-       la ventana si el formulario no confirma.
+       La cámara se cierra inmediatamente
+       después de enviar la foto.
     */
+
+    detenerCamara();
 
     setTimeout(()=>{
 
-        if(
-            confirmado||
-            terminado
-        )
-            return;
+        try{
 
-        window.removeEventListener(
-            'message',
-            recibirACK
-        );
+            if(
+                window.opener &&
+                !window.opener.closed
+            ){
 
-        setStatus(
-            '⚠️ La foto fue enviada, pero el formulario NO confirmó que la guardó.\n'+
-            'La cámara permanecerá abierta para evitar perder la fotografía.'
-        );
+                window.opener.focus();
 
-        /*
-           IMPORTANTE:
-           NO detener cámara.
-           NO cerrar ventana.
-           La foto permanece disponible en fotoBase.
-        */
+            }
 
-    },10000);
+            window.close();
+
+        }
+        catch(_){}
+
+    },300);
 }
 
 /* =========================================================
